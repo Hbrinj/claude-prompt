@@ -153,10 +153,10 @@ Execute in this exact order:
 2. **Code** — implement the change scoped to the plan
 3. **Tests** — write tests before marking implementation complete; all tests MUST pass locally
 4. **Review loop** — run the `code-reviewer` agent; apply all CRITICAL and MAJOR fixes; repeat up to 3 times total; stop when verdict is APPROVE or 3 cycles are exhausted
-5. **Push** — push the branch to origin
-6. **PR** — open a pull request with the feature plan as the PR description
-7. **Pipeline** — monitor CI until it passes; if any check fails, read the failure output, fix the root cause, push again, and re-monitor; NEVER skip or bypass failing checks
-8. **Feature log** — on PR merge, update `features/all_features.md` by appending one row to the features table
+5. **Feature log** — update `features/all_features.md` by appending one row to the features table; MUST be committed on the feature branch before the PR is opened
+6. **Push** — push the branch to origin
+7. **PR** — open a pull request with the feature plan as the PR description
+8. **Pipeline** — monitor CI until it passes; if any check fails, read the failure output, fix the root cause, push again, and re-monitor; NEVER skip or bypass failing checks
 
 **End of Step 3 — Review gate**
 
@@ -184,14 +184,14 @@ Stop and ask:
 
 ## features/all_features.md schema
 
-Create this file if it does not exist. Append one row per merged feature.
+Create this file if it does not exist. Append one row per feature before its PR is opened. Status starts as `In Review` and is updated to `Merged` after the PR merges.
 
 ```
 # All Features
 
 | Feature | Branch | Summary | Status | Merged |
 |---------|--------|---------|--------|--------|
-| <feature_name> | feature/<name> | One sentence summary | Merged | YYYY-MM-DD |
+| <feature_name> | feature/<name> | One sentence summary | In Review | YYYY-MM-DD |
 ```
 
 ---
