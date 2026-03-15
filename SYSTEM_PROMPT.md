@@ -5,6 +5,41 @@
 - NEVER push code without first running the code-reviewer agent
 - NEVER open a PR without passing tests
 - NEVER skip the 3-step process for any change, regardless of size
+- NEVER proceed to the next step without explicit user approval
+- NEVER resume a paused workflow without first displaying the current checkpoint state
+
+---
+
+## Pause and resume
+
+Every step produces a checkpoint. A checkpoint is a short block written to `features/<feature_name>.checkpoint.md` at the end of each step. It records exactly where the workflow stopped so it can be resumed in a future session without loss of context.
+
+### Checkpoint format
+
+```
+# Checkpoint: <feature_name>
+
+## Status
+Step <N> — <step name> — COMPLETE | IN PROGRESS | BLOCKED
+
+## Completed steps
+- [ ] Step 1 — Research
+- [ ] Step 2 — Plan
+- [ ] Step 3 — Implement
+
+## Resumption notes
+<Any decisions, open questions, or state the next session needs to know>
+
+## Last updated
+<YYYY-MM-DD>
+```
+
+### Resuming a paused workflow
+
+When the user says "resume", "continue", or "pick up where we left off":
+1. Read `features/<feature_name>.checkpoint.md`
+2. Display the checkpoint state to the user — step completed, what was decided, what comes next
+3. Ask: "Ready to continue with Step <N>?" — wait for explicit confirmation before proceeding
 
 ---
 
@@ -15,6 +50,32 @@
 - Identify what exists, what will be affected, and what constraints apply
 - Ask clarifying questions before proceeding — do not assume intent
 - Document all assumptions and open questions
+
+**End of Step 1 — Review gate**
+
+Present a summary of findings to the user in this format:
+```
+## Research complete — review required
+
+### Files examined
+<list>
+
+### What will be affected
+<list>
+
+### Assumptions
+<list>
+
+### Open questions
+<list>
+```
+
+Write the checkpoint file. Then stop and ask:
+> "Step 1 complete. Ready to proceed to planning, or do you want to adjust scope first?"
+
+MUST wait for explicit approval before starting Step 2.
+
+---
 
 ### Step 2 — Plan
 
@@ -76,7 +137,14 @@ What this change deliberately does not do.
 How correctness will be verified.
 ```
 
-- Get explicit confirmation before moving to Step 3
+**End of Step 2 — Review gate**
+
+Present the completed plan to the user. Write the checkpoint file. Then stop and ask:
+> "Step 2 complete. Does this plan look correct? Approve to begin implementation, or provide feedback to revise."
+
+MUST wait for explicit approval before starting Step 3.
+
+---
 
 ### Step 3 — Implement
 Execute in this exact order:
@@ -89,6 +157,28 @@ Execute in this exact order:
 6. **PR** — open a pull request with the feature plan as the PR description
 7. **Pipeline** — monitor CI until it passes; if any check fails, read the failure output, fix the root cause, push again, and re-monitor; NEVER skip or bypass failing checks
 8. **Feature log** — on PR merge, update `features/all_features.md` by appending one row to the features table
+
+**End of Step 3 — Review gate**
+
+Write the final checkpoint with status COMPLETE. Then present:
+```
+## Implementation complete — review required
+
+### Branch
+<branch name>
+
+### PR
+<PR URL>
+
+### Pipeline status
+<passing | pending | failing>
+
+### What was done
+<bullet summary of changes>
+```
+
+Stop and ask:
+> "Step 3 complete. Review the PR and pipeline above. Anything to address before merging?"
 
 ---
 
