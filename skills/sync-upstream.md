@@ -1,12 +1,12 @@
 ---
 Name: sync-upstream
-Version: 2.0.0
-Description: Establishes or updates the claude-prompt submodule from https://github.com/Hbrinj/claude-prompt, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/skills to the repo directories so Claude Code picks them up globally, and updates CLAUDE.md from SYSTEM_PROMPT.md. Trigger when the user wants to pull the latest agents or skills from the shared library, set up the submodule for the first time, or refresh CLAUDE.md with the latest workflow.
+Version: 2.1.0
+Description: Establishes or updates the claude-prompt submodule from https://github.com/Hbrinj/claude-prompt, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/commands to the repo directories so agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md from SYSTEM_PROMPT.md. Trigger when the user wants to pull the latest agents or skills from the shared library, set up the submodule for the first time, or refresh CLAUDE.md with the latest workflow.
 ---
 
 ## Starting state
 
-The current repo may or may not have a git submodule pointing to `https://github.com/Hbrinj/claude-prompt`. The submodule path, when present, is `.claude-prompt/` at the repo root. `~/.claude/agents` and `~/.claude/skills` may or may not exist.
+The current repo may or may not have a git submodule pointing to `https://github.com/Hbrinj/claude-prompt`. The submodule path, when present, is `.claude-prompt/` at the repo root. `~/.claude/agents` and `~/.claude/commands` may or may not exist.
 
 ## Target state
 
@@ -14,7 +14,7 @@ The current repo may or may not have a git submodule pointing to `https://github
 2. All files under `agents/` in the submodule are present in the repo's `agents/` directory (preserving subdirectories).
 3. All files under `skills/` in the submodule are present in the repo's `skills/` directory (preserving subdirectories).
 4. `~/.claude/agents` is a symlink pointing to `<absolute_repo_root>/agents/`.
-5. `~/.claude/skills` is a symlink pointing to `<absolute_repo_root>/skills/`.
+5. `~/.claude/commands` is a symlink pointing to `<absolute_repo_root>/skills/`.
 6. `CLAUDE.md` contains the latest content from `.claude-prompt/SYSTEM_PROMPT.md` inside a guarded block. Content outside the guarded block is preserved unchanged.
 
 ---
@@ -90,18 +90,20 @@ Check the current state of `~/.claude/agents`:
   ```
 - **Exists as a regular directory or file** → STOP. Report the conflict and ask the user whether to remove it before creating the symlink.
 
-### Step 8 — Link ~/.claude/skills
+### Step 8 — Link ~/.claude/commands
 
-Check the current state of `~/.claude/skills`:
+`~/.claude/commands/` is the directory Claude Code CLI reads for global slash commands. Symlink it to the repo's `skills/` directory so all skills are available in any Claude Code session.
+
+Check the current state of `~/.claude/commands`:
 
 - **Does not exist** → create the symlink:
   ```
-  ln -s $REPO_ROOT/skills ~/.claude/skills
+  ln -s $REPO_ROOT/skills ~/.claude/commands
   ```
 - **Exists as a symlink pointing to `$REPO_ROOT/skills`** → already correct, skip.
 - **Exists as a symlink pointing to a different path** → update it:
   ```
-  ln -sfn $REPO_ROOT/skills ~/.claude/skills
+  ln -sfn $REPO_ROOT/skills ~/.claude/commands
   ```
 - **Exists as a regular directory or file** → STOP. Report the conflict and ask the user whether to remove it before creating the symlink.
 
@@ -135,7 +137,7 @@ Output a summary block:
 
 Submodule:   .claude-prompt @ <short commit hash>
 Agents:      <count> files synced → ~/.claude/agents → $REPO_ROOT/agents/
-Skills:      <count> files synced → ~/.claude/skills → $REPO_ROOT/skills/
+Skills:      <count> files synced → ~/.claude/commands → $REPO_ROOT/skills/
 CLAUDE.md:   updated (markers found | markers appended)
 
 Staged changes are NOT committed. Review with `git diff` before committing.
@@ -150,7 +152,7 @@ Staged changes are NOT committed. Review with `git diff` before committing.
 - Read files inside `.claude-prompt/`
 - Create or overwrite files under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/`
 - Run `mkdir -p ~/.claude`
-- Create or update symlinks at `~/.claude/agents` and `~/.claude/skills`
+- Create or update symlinks at `~/.claude/agents` and `~/.claude/commands`
 - Edit `CLAUDE.md` within the guarded markers only
 
 ## Forbidden actions
@@ -160,11 +162,11 @@ Staged changes are NOT committed. Review with `git diff` before committing.
 - NEVER delete existing `agents/` or `skills/` files not present in the submodule
 - NEVER overwrite content in `CLAUDE.md` outside the guarded markers
 - NEVER run `git submodule update` on any submodule other than `.claude-prompt`
-- NEVER remove or overwrite `~/.claude/agents` or `~/.claude/skills` if they are regular directories — always ask first
+- NEVER remove or overwrite `~/.claude/agents` or `~/.claude/commands` if they are regular directories — always ask first
 
 ## Stop and ask before
 
-- `~/.claude/agents` or `~/.claude/skills` exists as a regular directory or file (not a symlink)
+- `~/.claude/agents` or `~/.claude/commands` exists as a regular directory or file (not a symlink)
 - The `.claude-prompt/` path already exists as a regular directory (not a submodule)
 - The submodule remote URL in `.gitmodules` does not match `https://github.com/Hbrinj/claude-prompt`
 - Any git command exits with a non-zero status — report the full error output and stop
