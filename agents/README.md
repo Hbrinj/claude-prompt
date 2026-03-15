@@ -2,4 +2,4 @@
 
 | Agent | Description |
 |-------|-------------|
-| _(none yet)_ | Add your first agent and list it here |
+| [code-reviewer](code-reviewer.md) | Reviews code changes from git diff and outputs severity-labeled findings with a verdict |
