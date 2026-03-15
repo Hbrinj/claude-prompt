@@ -2,4 +2,4 @@
 
 | Skill | Description |
 |-------|-------------|
-| _(none yet)_ | Add your first skill and list it here |
+| [sync-upstream](sync-upstream.md) | Establishes or updates the claude-prompt submodule, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/skills to the repo directories, and updates CLAUDE.md |
