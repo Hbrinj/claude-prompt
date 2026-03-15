@@ -153,32 +153,35 @@ Execute in this exact order:
 2. **Code** — implement the change scoped to the plan
 3. **Tests** — write tests before marking implementation complete; all tests MUST pass locally
 4. **Review loop** — run the `code-reviewer` agent; apply all CRITICAL and MAJOR fixes; repeat up to 3 times total; stop when verdict is APPROVE or 3 cycles are exhausted
-5. **Feature log** — update `features/all_features.md` by appending one row to the features table; MUST be committed on the feature branch before the PR is opened
+5. **Feature log** — update `features/all_features.md` by appending one row to the features table with status `In Review`; MUST be committed on the feature branch before the PR is opened
 6. **Push** — push the branch to origin
-7. **PR** — open a pull request with the feature plan as the PR description
-8. **Pipeline** — monitor CI until it passes; if any check fails, read the failure output, fix the root cause, push again, and re-monitor; NEVER skip or bypass failing checks
 
 **End of Step 3 — Review gate**
 
-Write the final checkpoint with status COMPLETE. Then present:
+Write the checkpoint file with status COMPLETE. Then present:
 ```
-## Implementation complete — review required
+## Implementation complete — review required before PR
 
 ### Branch
 <branch name>
 
-### PR
-<PR URL>
+### Commits on branch
+<list of commit subjects>
 
-### Pipeline status
-<passing | pending | failing>
+### Feature log entry
+<the row added to features/all_features.md>
 
 ### What was done
 <bullet summary of changes>
 ```
 
 Stop and ask:
-> "Step 3 complete. Review the PR and pipeline above. Anything to address before merging?"
+> "Implementation is complete and the feature log has been updated. Approve to open the PR, or provide feedback to address first."
+
+MUST wait for explicit approval before continuing.
+
+7. **PR** — open a pull request with the feature plan as the PR description; only after user approval above
+8. **Pipeline** — monitor CI until it passes; if any check fails, read the failure output, fix the root cause, push again, and re-monitor; NEVER skip or bypass failing checks
 
 ---
 
