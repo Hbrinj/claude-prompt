@@ -17,6 +17,34 @@
 - Document all assumptions and open questions
 
 ### Step 2 — Plan
+
+#### 2a — Context gathering (sub-agents)
+
+Before writing the plan, spawn one sub-agent per concern area that needs investigation. Run all sub-agents in parallel. Each sub-agent MUST:
+- Focus on exactly one concern (examples: affected call sites, data-flow impact, test coverage gaps, dependency surface, API contract changes, configuration drift)
+- Return its findings as a single structured section — no prose padding, findings only
+- Terminate after returning findings — NEVER take any write actions
+
+The main agent collects all sub-agent responses and merges them into a single ephemeral context document held in memory only — never written to disk. This document has the form:
+
+```
+## Context: <change title>
+
+### [Concern area — sub-agent 1]
+<findings>
+
+### [Concern area — sub-agent 2]
+<findings>
+
+...
+```
+
+Spawn as many sub-agents as needed to fully cover the change. Spawn none if the change is trivially scoped to a single isolated file with no dependents.
+
+#### 2b — Plan
+
+- Use the ephemeral context document as the sole input for scoping the plan
+- Discard the context document once the plan is written
 - Define the target state in concrete, verifiable terms
 - If the change modifies system architecture (data flow, service boundaries, core dependencies, directory structure):
   - Run the `architecture` agent in change-review mode
