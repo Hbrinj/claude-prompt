@@ -51,7 +51,7 @@ What this script does:
   1. Adds ${REPO_URL} as a git submodule at SUBMODULE_PATH
   2. Runs: git submodule update --init --recursive
   3. Symlinks agents/ and skills/ from the submodule into ~/.claude/
-  4. Handles CLAUDE.md merge with interactive prompts
+  4. Merges submodule SYSTEM_PROMPT.md into target CLAUDE.md with interactive prompts
 
 EOF
 }
@@ -207,25 +207,25 @@ echo "→ Wiring up symlinks in ${CLAUDE_DIR}…"
 create_symlink "${CLAUDE_DIR}/agents" "${SUBMODULE_ABS}/agents" "agents"
 create_symlink "${CLAUDE_DIR}/skills" "${SUBMODULE_ABS}/skills" "skills"
 
-# ── Step 4: CLAUDE.md merge ──────────────────────────────────────────────────
+# ── Step 4: SYSTEM_PROMPT.md → CLAUDE.md merge ──────────────────────────────
 echo "→ Handling CLAUDE.md…"
 
-SUBMODULE_CLAUDE_MD="${SUBMODULE_ABS}/CLAUDE.md"
+SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/SYSTEM_PROMPT.md"
 PROJECT_CLAUDE_MD="${PROJECT_ROOT}/CLAUDE.md"
 
-if [ ! -f "${SUBMODULE_CLAUDE_MD}" ]; then
-  echo "  Warning: Submodule has no CLAUDE.md. Skipping." >&2
-  record_skipped "CLAUDE.md merge (submodule CLAUDE.md not found)"
+if [ ! -f "${SUBMODULE_SYSTEM_PROMPT_MD}" ]; then
+  echo "  Warning: Submodule has no SYSTEM_PROMPT.md. Skipping." >&2
+  record_skipped "CLAUDE.md merge (submodule SYSTEM_PROMPT.md not found)"
 elif [ ! -f "${PROJECT_CLAUDE_MD}" ]; then
-  cp "${SUBMODULE_CLAUDE_MD}" "${PROJECT_CLAUDE_MD}"
-  echo "  ✓ CLAUDE.md created"
-  record_action "Created CLAUDE.md from submodule"
+  cp "${SUBMODULE_SYSTEM_PROMPT_MD}" "${PROJECT_CLAUDE_MD}"
+  echo "  ✓ CLAUDE.md created from submodule SYSTEM_PROMPT.md"
+  record_action "Created CLAUDE.md from submodule SYSTEM_PROMPT.md"
 else
   # CLAUDE.md already exists — prompt user interactively via /dev/tty
   echo ""
   echo "CLAUDE.md already exists. Choose an option:"
-  echo "  [1] Append submodule CLAUDE.md below a separator (non-destructive)"
-  echo "  [2] Replace with submodule CLAUDE.md (overwrites existing)"
+  echo "  [1] Append submodule SYSTEM_PROMPT.md below a separator (non-destructive)"
+  echo "  [2] Replace CLAUDE.md with submodule SYSTEM_PROMPT.md (overwrites existing)"
   echo "  [3] Skip — leave CLAUDE.md untouched"
   printf "Enter 1, 2, or 3: "
 
@@ -233,23 +233,23 @@ else
 
   case "${claude_choice}" in
     1)
-      new_hash="$(compute_hash "${SUBMODULE_CLAUDE_MD}")"
+      new_hash="$(compute_hash "${SUBMODULE_SYSTEM_PROMPT_MD}")"
       {
         echo ""
         echo "${SEPARATOR_MARKER}"
-        cat "${SUBMODULE_CLAUDE_MD}"
+        cat "${SUBMODULE_SYSTEM_PROMPT_MD}"
         echo "# claude-prompt-hash: ${new_hash}"
       } >> "${PROJECT_CLAUDE_MD}"
-      echo "  ✓ Appended submodule CLAUDE.md to existing CLAUDE.md"
-      record_action "Appended submodule CLAUDE.md to existing CLAUDE.md"
+      echo "  ✓ Appended submodule SYSTEM_PROMPT.md to existing CLAUDE.md"
+      record_action "Appended submodule SYSTEM_PROMPT.md to existing CLAUDE.md"
       ;;
     2)
       printf "  This will overwrite your existing CLAUDE.md. Are you sure? (y/N): "
       read -r overwrite_confirm </dev/tty
       if [ "${overwrite_confirm}" = "y" ] || [ "${overwrite_confirm}" = "Y" ]; then
-        cp "${SUBMODULE_CLAUDE_MD}" "${PROJECT_CLAUDE_MD}"
-        echo "  ✓ Replaced CLAUDE.md with submodule CLAUDE.md"
-        record_action "Replaced CLAUDE.md with submodule CLAUDE.md"
+        cp "${SUBMODULE_SYSTEM_PROMPT_MD}" "${PROJECT_CLAUDE_MD}"
+        echo "  ✓ Replaced CLAUDE.md with submodule SYSTEM_PROMPT.md"
+        record_action "Replaced CLAUDE.md with submodule SYSTEM_PROMPT.md"
       else
         echo "  Overwrite cancelled. CLAUDE.md left untouched."
         record_skipped "CLAUDE.md overwrite (cancelled by user)"

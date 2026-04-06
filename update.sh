@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update.sh — Pull latest claude-prompt submodule changes and re-run CLAUDE.md merge flow
+# update.sh — Pull latest claude-prompt submodule changes and re-run SYSTEM_PROMPT.md → CLAUDE.md merge flow
 
 set -euo pipefail
 
@@ -43,7 +43,7 @@ usage() {
   cat <<EOF
 Usage: $0 [OPTIONS]
 
-Pull latest claude-prompt submodule changes and re-run the CLAUDE.md merge flow.
+Pull latest claude-prompt submodule changes and re-run the SYSTEM_PROMPT.md → CLAUDE.md merge flow.
 
 Options:
   --help, -h    Print this help message and exit
@@ -54,7 +54,7 @@ What this script does:
   2. Runs: git submodule update --remote --merge <submodule-path>
   3. Prints what changed (git log since last update)
   4. Verifies and repairs ~/.claude/agents and ~/.claude/skills symlinks
-  5. Re-runs the CLAUDE.md merge flow with hash-based change detection
+  5. Re-runs the SYSTEM_PROMPT.md → CLAUDE.md merge flow with hash-based change detection
 
 Run install.sh first if you haven't already.
 EOF
@@ -247,30 +247,30 @@ verify_symlink() {
 verify_symlink "${CLAUDE_DIR}/agents" "${SUBMODULE_ABS}/agents" "agents"
 verify_symlink "${CLAUDE_DIR}/skills" "${SUBMODULE_ABS}/skills" "skills"
 
-# ── Step 5: CLAUDE.md merge ───────────────────────────────────────────────────
+# ── Step 5: SYSTEM_PROMPT.md → CLAUDE.md merge ───────────────────────────────
 echo "→ Checking CLAUDE.md…"
 
-SUBMODULE_CLAUDE_MD="${SUBMODULE_ABS}/CLAUDE.md"
+SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/SYSTEM_PROMPT.md"
 PROJECT_CLAUDE_MD="${PROJECT_ROOT}/CLAUDE.md"
 
-if [ ! -f "${SUBMODULE_CLAUDE_MD}" ]; then
-  echo "  Warning: Submodule has no CLAUDE.md. Skipping." >&2
-  record_skipped "CLAUDE.md update (submodule CLAUDE.md not found)"
+if [ ! -f "${SUBMODULE_SYSTEM_PROMPT_MD}" ]; then
+  echo "  Warning: Submodule has no SYSTEM_PROMPT.md. Skipping." >&2
+  record_skipped "CLAUDE.md update (submodule SYSTEM_PROMPT.md not found)"
   print_summary
   exit 0
 fi
 
-new_hash="$(compute_hash "${SUBMODULE_CLAUDE_MD}")"
+new_hash="$(compute_hash "${SUBMODULE_SYSTEM_PROMPT_MD}")"
 
 if [ ! -f "${PROJECT_CLAUDE_MD}" ]; then
-  # No project CLAUDE.md — create it fresh
+  # No project CLAUDE.md — create it fresh from submodule SYSTEM_PROMPT.md
   if $DRY_RUN; then
-    echo "  [dry-run] Would create CLAUDE.md from submodule"
-    record_action "[dry-run] Create CLAUDE.md from submodule"
+    echo "  [dry-run] Would create CLAUDE.md from submodule SYSTEM_PROMPT.md"
+    record_action "[dry-run] Create CLAUDE.md from submodule SYSTEM_PROMPT.md"
   else
-    cp "${SUBMODULE_CLAUDE_MD}" "${PROJECT_CLAUDE_MD}"
-    echo "  ✓ CLAUDE.md created"
-    record_action "Created CLAUDE.md from submodule"
+    cp "${SUBMODULE_SYSTEM_PROMPT_MD}" "${PROJECT_CLAUDE_MD}"
+    echo "  ✓ CLAUDE.md created from submodule SYSTEM_PROMPT.md"
+    record_action "Created CLAUDE.md from submodule SYSTEM_PROMPT.md"
   fi
   print_summary
   exit 0
@@ -286,9 +286,9 @@ fi
 
 # Hash differs — prompt the user
 echo ""
-echo "The submodule CLAUDE.md has changed. Choose an option:"
-echo "  [1] Append updated submodule section (replaces previous appended section if present)"
-echo "  [2] Replace entire CLAUDE.md with submodule version"
+echo "The submodule SYSTEM_PROMPT.md has changed. Choose an option:"
+echo "  [1] Append updated submodule section to CLAUDE.md (replaces previous appended section if present)"
+echo "  [2] Replace entire CLAUDE.md with submodule SYSTEM_PROMPT.md"
 echo "  [3] Skip — leave CLAUDE.md untouched"
 printf "Enter 1, 2, or 3: "
 
@@ -301,8 +301,8 @@ case "${claude_choice}" in
         echo "  [dry-run] Would replace existing appended section in CLAUDE.md (hash: ${new_hash})"
         record_action "[dry-run] Replace existing claude-prompt section in CLAUDE.md"
       else
-        echo "  [dry-run] Would append submodule section to CLAUDE.md (hash: ${new_hash})"
-        record_action "[dry-run] Append submodule section to CLAUDE.md"
+        echo "  [dry-run] Would append submodule SYSTEM_PROMPT.md to CLAUDE.md (hash: ${new_hash})"
+        record_action "[dry-run] Append submodule SYSTEM_PROMPT.md to CLAUDE.md"
       fi
     else
       tmpfile="$(mktemp)"
@@ -322,13 +322,13 @@ case "${claude_choice}" in
       else
         # No previous block — copy verbatim, then append below
         cp "${PROJECT_CLAUDE_MD}" "${tmpfile}"
-        action_label="Appended submodule section to CLAUDE.md"
+        action_label="Appended submodule SYSTEM_PROMPT.md to CLAUDE.md"
       fi
 
       {
         echo ""
         echo "${SEPARATOR_MARKER}"
-        cat "${SUBMODULE_CLAUDE_MD}"
+        cat "${SUBMODULE_SYSTEM_PROMPT_MD}"
         echo "# claude-prompt-hash: ${new_hash}"
       } >> "${tmpfile}"
 
@@ -344,12 +344,12 @@ case "${claude_choice}" in
     read -r overwrite_confirm </dev/tty
     if [ "${overwrite_confirm}" = "y" ] || [ "${overwrite_confirm}" = "Y" ]; then
       if $DRY_RUN; then
-        echo "  [dry-run] Would overwrite CLAUDE.md with submodule version"
-        record_action "[dry-run] Overwrite CLAUDE.md with submodule version"
+        echo "  [dry-run] Would overwrite CLAUDE.md with submodule SYSTEM_PROMPT.md"
+        record_action "[dry-run] Overwrite CLAUDE.md with submodule SYSTEM_PROMPT.md"
       else
-        cp "${SUBMODULE_CLAUDE_MD}" "${PROJECT_CLAUDE_MD}"
-        echo "  ✓ Replaced CLAUDE.md with submodule version"
-        record_action "Replaced CLAUDE.md with submodule version"
+        cp "${SUBMODULE_SYSTEM_PROMPT_MD}" "${PROJECT_CLAUDE_MD}"
+        echo "  ✓ Replaced CLAUDE.md with submodule SYSTEM_PROMPT.md"
+        record_action "Replaced CLAUDE.md with submodule SYSTEM_PROMPT.md"
       fi
     else
       echo "  Overwrite cancelled. CLAUDE.md left untouched."
