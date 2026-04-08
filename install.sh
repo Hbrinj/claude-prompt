@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # install.sh — Install claude-prompt as a git submodule into a target project
-# and wire up agents/ and skills/ into ~/.claude/
+# and wire up agents/ and skills/ into the project-level .claude/
 
 set -euo pipefail
 
@@ -38,7 +38,7 @@ usage() {
   cat <<EOF
 Usage: $0 [OPTIONS] [SUBMODULE_PATH]
 
-Install claude-prompt as a git submodule and wire up agents/skills into ~/.claude/.
+Install claude-prompt as a git submodule and wire up agents/skills into the project-level .claude/.
 
 Arguments:
   SUBMODULE_PATH   Path relative to the target project root where the submodule
@@ -50,7 +50,7 @@ Options:
 What this script does:
   1. Adds ${REPO_URL} as a git submodule at SUBMODULE_PATH
   2. Runs: git submodule update --init --recursive
-  3. Symlinks agents/ and skills/ from the submodule into ~/.claude/
+  3. Symlinks agents/ and skills/ from the submodule into the project-level .claude/
   4. Merges submodule SYSTEM_PROMPT.md into target CLAUDE.md with interactive prompts
 
 EOF
@@ -153,17 +153,17 @@ echo "→ Running git submodule update --init --recursive…"
 git submodule update --init --recursive
 record_action "git submodule update --init --recursive"
 
-# ── Step 3: Symlinks into ~/.claude/ ─────────────────────────────────────────
-CLAUDE_DIR="${HOME}/.claude"
+# ── Step 3: Symlinks into project-level .claude/ ─────────────────────────────
+CLAUDE_DIR="${PROJECT_ROOT}/.claude"
 
-# Ensure ~/.claude exists
+# Ensure .claude exists
 if [ ! -d "${CLAUDE_DIR}" ]; then
   mkdir -p "${CLAUDE_DIR}"
   record_action "Created directory ${CLAUDE_DIR}"
 fi
 
 create_symlink() {
-  local link_path="$1"    # e.g. ~/.claude/agents
+  local link_path="$1"    # e.g. .claude/agents
   local target="$2"       # e.g. <submodule-path>/agents
   local label="$3"        # human-readable label for summary
 

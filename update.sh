@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # update.sh — Pull latest claude-prompt submodule changes and re-run SYSTEM_PROMPT.md → CLAUDE.md merge flow
+# and wire up agents/ and skills/ into the project-level .claude/
 
 set -euo pipefail
 
-CLAUDE_DIR="${HOME}/.claude"
 # Must match the separator written by install.sh
 SEPARATOR_MARKER="# --- claude-prompt start ---"
 
@@ -53,7 +53,7 @@ What this script does:
   1. Detects the claude-prompt submodule path from .gitmodules
   2. Runs: git submodule update --remote --merge <submodule-path>
   3. Prints what changed (git log since last update)
-  4. Verifies and repairs ~/.claude/agents and ~/.claude/skills symlinks
+  4. Verifies and repairs project-level .claude/agents and .claude/skills symlinks
   5. Re-runs the SYSTEM_PROMPT.md → CLAUDE.md merge flow with hash-based change detection
 
 Run install.sh first if you haven't already.
@@ -94,6 +94,7 @@ if [ "$(pwd)" != "${PROJECT_ROOT}" ]; then
   exit 1
 fi
 
+CLAUDE_DIR="${PROJECT_ROOT}/.claude"
 GITMODULES="${PROJECT_ROOT}/.gitmodules"
 
 if [ ! -f "${GITMODULES}" ]; then
@@ -235,7 +236,7 @@ verify_symlink() {
       echo "  [dry-run] Would create missing symlink: ${link_path} → ${target}"
       record_action "[dry-run] Create missing symlink ${link_path} → ${target}"
     else
-      # Ensure ~/.claude exists
+      # Ensure .claude exists
       mkdir -p "${CLAUDE_DIR}"
       ln -s "${target}" "${link_path}"
       echo "  ✓ Repaired symlink: ${link_path}"
