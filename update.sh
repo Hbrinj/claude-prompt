@@ -2,6 +2,11 @@
 # update.sh — Pull latest claude-prompt submodule changes and re-run SYSTEM_PROMPT.md → CLAUDE.md merge flow
 # and wire up agents/ and skills/ into the project-level .claude/
 
+# Ensure bash-compatible array behaviour when piped to zsh (curl | zsh)
+if [ -n "${ZSH_VERSION:-}" ]; then
+  setopt KSH_ARRAYS NO_NOMATCH 2>/dev/null
+fi
+
 set -euo pipefail
 
 # Must match the separator written by install.sh
@@ -287,7 +292,7 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}"
   echo ""
   echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists in the submodule."
   echo "  Please choose a replacement:"
-  for i in "${!SYSTEM_PROMPTS[@]}"; do
+  for ((i = 0; i < PROMPT_COUNT; i++)); do
     echo "    [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
   done
   printf "  Select one (1-%d): " "${PROMPT_COUNT}"
@@ -304,7 +309,7 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}" ]
   echo "  Previously selected: ${PREVIOUS_SOURCE}"
   echo ""
   echo "  Available system prompts:"
-  for i in "${!SYSTEM_PROMPTS[@]}"; do
+  for ((i = 0; i < PROMPT_COUNT; i++)); do
     marker=""
     if [ "${SYSTEM_PROMPTS[$i]}" = "${PREVIOUS_SOURCE}" ]; then marker=" (current)"; fi
     echo "    [$((i + 1))] ${SYSTEM_PROMPTS[$i]}${marker}"
@@ -324,7 +329,7 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}" ]
 else
   echo ""
   echo "  Available system prompts:"
-  for i in "${!SYSTEM_PROMPTS[@]}"; do
+  for ((i = 0; i < PROMPT_COUNT; i++)); do
     echo "    [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
   done
   printf "  Select one (1-%d): " "${PROMPT_COUNT}"

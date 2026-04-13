@@ -2,6 +2,11 @@
 # install.sh — Install claude-prompt as a git submodule into a target project
 # and wire up agents/ and skills/ into the project-level .claude/
 
+# Ensure bash-compatible array behaviour when piped to zsh (curl | zsh)
+if [ -n "${ZSH_VERSION:-}" ]; then
+  setopt KSH_ARRAYS NO_NOMATCH 2>/dev/null
+fi
+
 set -euo pipefail
 
 REPO_URL="https://github.com/Hbrinj/claude-prompt.git"
@@ -241,7 +246,7 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}"
   echo ""
   echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists in the submodule."
   echo "  Please choose a replacement:"
-  for i in "${!SYSTEM_PROMPTS[@]}"; do
+  for ((i = 0; i < PROMPT_COUNT; i++)); do
     echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
   done
   printf "Enter choice (1-%d): " "${PROMPT_COUNT}"
@@ -258,7 +263,7 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}"
 elif [ "${PROMPT_COUNT}" -gt 1 ]; then
   echo ""
   echo "Multiple system prompts available. Select one:"
-  for i in "${!SYSTEM_PROMPTS[@]}"; do
+  for ((i = 0; i < PROMPT_COUNT; i++)); do
     marker=""
     if [ -n "${PREVIOUS_SOURCE}" ] && [ "${SYSTEM_PROMPTS[$i]}" = "${PREVIOUS_SOURCE}" ]; then marker=" (current)"; fi
     echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}${marker}"
