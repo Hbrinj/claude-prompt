@@ -216,6 +216,7 @@ while IFS= read -r -d '' sp_file; do
   SYSTEM_PROMPTS+=("$(basename "$sp_file")")
 done < <(find "${SUBMODULE_ABS}" -maxdepth 1 -name '*SYSTEM_PROMPT*.md' -print0 | sort -z)
 
+PROMPT_COUNT=${#SYSTEM_PROMPTS[@]}
 PROJECT_CLAUDE_MD="${PROJECT_ROOT}/CLAUDE.md"
 
 # Detect previously selected system prompt from existing CLAUDE.md
@@ -224,10 +225,10 @@ if [ -f "${PROJECT_CLAUDE_MD}" ]; then
   PREVIOUS_SOURCE="$(grep -oP '(?<=^# claude-prompt-source: ).+' "${PROJECT_CLAUDE_MD}" 2>/dev/null || true)"
 fi
 
-if [ ${#SYSTEM_PROMPTS[@]} -eq 0 ]; then
+if [ "${PROMPT_COUNT}" -eq 0 ]; then
   echo "  Warning: No system prompt files found in submodule. Skipping." >&2
   record_skipped "CLAUDE.md merge (no system prompt files found)"
-elif [ ${#SYSTEM_PROMPTS[@]} -eq 1 ]; then
+elif [ "${PROMPT_COUNT}" -eq 1 ]; then
   SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
   if [ -n "${PREVIOUS_SOURCE}" ] && [ "${PREVIOUS_SOURCE}" != "${SELECTED_PROMPT}" ]; then
     echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists."
@@ -243,10 +244,10 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}"
   for i in "${!SYSTEM_PROMPTS[@]}"; do
     echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
   done
-  printf "Enter choice (1-%d): " "${#SYSTEM_PROMPTS[@]}"
+  printf "Enter choice (1-%d): " "${PROMPT_COUNT}"
   read -r sp_choice </dev/tty
 
-  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${#SYSTEM_PROMPTS[@]}" ]; then
+  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${PROMPT_COUNT}" ]; then
     SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
   else
     echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
@@ -254,7 +255,7 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}"
   fi
   echo "  Using system prompt: ${SELECTED_PROMPT}"
   SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
-elif [ ${#SYSTEM_PROMPTS[@]} -gt 1 ]; then
+elif [ "${PROMPT_COUNT}" -gt 1 ]; then
   echo ""
   echo "Multiple system prompts available. Select one:"
   for i in "${!SYSTEM_PROMPTS[@]}"; do
@@ -262,10 +263,10 @@ elif [ ${#SYSTEM_PROMPTS[@]} -gt 1 ]; then
     if [ -n "${PREVIOUS_SOURCE}" ] && [ "${SYSTEM_PROMPTS[$i]}" = "${PREVIOUS_SOURCE}" ]; then marker=" (current)"; fi
     echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}${marker}"
   done
-  printf "Enter choice (1-%d): " "${#SYSTEM_PROMPTS[@]}"
+  printf "Enter choice (1-%d): " "${PROMPT_COUNT}"
   read -r sp_choice </dev/tty
 
-  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${#SYSTEM_PROMPTS[@]}" ]; then
+  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${PROMPT_COUNT}" ]; then
     SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
   else
     echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
@@ -275,7 +276,7 @@ elif [ ${#SYSTEM_PROMPTS[@]} -gt 1 ]; then
   SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
 fi
 
-if [ ${#SYSTEM_PROMPTS[@]} -eq 0 ]; then
+if [ "${PROMPT_COUNT}" -eq 0 ]; then
   : # Already handled above — skip the merge block
 elif [ ! -f "${SUBMODULE_SYSTEM_PROMPT_MD}" ]; then
   echo "  Warning: Selected file does not exist. Skipping." >&2

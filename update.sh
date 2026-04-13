@@ -259,7 +259,9 @@ while IFS= read -r -d '' sp_file; do
   SYSTEM_PROMPTS+=("$(basename "$sp_file")")
 done < <(find "${SUBMODULE_ABS}" -maxdepth 1 -name '*SYSTEM_PROMPT*.md' -print0 | sort -z)
 
-if [ ${#SYSTEM_PROMPTS[@]} -eq 0 ]; then
+PROMPT_COUNT=${PROMPT_COUNT}
+
+if [ "${PROMPT_COUNT}" -eq 0 ]; then
   echo "  Warning: No system prompt files found in submodule. Skipping." >&2
   record_skipped "CLAUDE.md update (no system prompt files found)"
   print_summary
@@ -273,7 +275,7 @@ if [ -f "${PROJECT_CLAUDE_MD}" ]; then
 fi
 
 # Select which system prompt to use
-if [ ${#SYSTEM_PROMPTS[@]} -eq 1 ]; then
+if [ ${PROMPT_COUNT} -eq 1 ]; then
   SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
   if [ -n "${PREVIOUS_SOURCE}" ] && [ "${PREVIOUS_SOURCE}" != "${SELECTED_PROMPT}" ]; then
     echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists."
@@ -288,10 +290,10 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}"
   for i in "${!SYSTEM_PROMPTS[@]}"; do
     echo "    [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
   done
-  printf "  Select one (1-%d): " "${#SYSTEM_PROMPTS[@]}"
+  printf "  Select one (1-%d): " "${PROMPT_COUNT}"
   read -r sp_choice </dev/tty
 
-  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${#SYSTEM_PROMPTS[@]}" ]; then
+  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${PROMPT_COUNT}" ]; then
     SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
   else
     echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
@@ -307,12 +309,12 @@ elif [ -n "${PREVIOUS_SOURCE}" ] && [ -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}" ]
     if [ "${SYSTEM_PROMPTS[$i]}" = "${PREVIOUS_SOURCE}" ]; then marker=" (current)"; fi
     echo "    [$((i + 1))] ${SYSTEM_PROMPTS[$i]}${marker}"
   done
-  printf "  Keep current or pick a new one? Enter choice (1-%d) or press Enter to keep [%s]: " "${#SYSTEM_PROMPTS[@]}" "${PREVIOUS_SOURCE}"
+  printf "  Keep current or pick a new one? Enter choice (1-%d) or press Enter to keep [%s]: " "${PROMPT_COUNT}" "${PREVIOUS_SOURCE}"
   read -r sp_choice </dev/tty
 
   if [ -z "${sp_choice}" ]; then
     SELECTED_PROMPT="${PREVIOUS_SOURCE}"
-  elif [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${#SYSTEM_PROMPTS[@]}" ]; then
+  elif [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${PROMPT_COUNT}" ]; then
     SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
   else
     echo "  Invalid choice '${sp_choice}'. Keeping ${PREVIOUS_SOURCE}." >&2
@@ -325,10 +327,10 @@ else
   for i in "${!SYSTEM_PROMPTS[@]}"; do
     echo "    [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
   done
-  printf "  Select one (1-%d): " "${#SYSTEM_PROMPTS[@]}"
+  printf "  Select one (1-%d): " "${PROMPT_COUNT}"
   read -r sp_choice </dev/tty
 
-  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${#SYSTEM_PROMPTS[@]}" ]; then
+  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${PROMPT_COUNT}" ]; then
     SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
   else
     echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
