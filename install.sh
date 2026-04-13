@@ -218,18 +218,49 @@ done < <(find "${SUBMODULE_ABS}" -maxdepth 1 -name '*SYSTEM_PROMPT*.md' -print0 
 
 PROJECT_CLAUDE_MD="${PROJECT_ROOT}/CLAUDE.md"
 
+# Detect previously selected system prompt from existing CLAUDE.md
+PREVIOUS_SOURCE=""
+if [ -f "${PROJECT_CLAUDE_MD}" ]; then
+  PREVIOUS_SOURCE="$(grep -oP '(?<=^# claude-prompt-source: ).+' "${PROJECT_CLAUDE_MD}" 2>/dev/null || true)"
+fi
+
 if [ ${#SYSTEM_PROMPTS[@]} -eq 0 ]; then
   echo "  Warning: No system prompt files found in submodule. Skipping." >&2
   record_skipped "CLAUDE.md merge (no system prompt files found)"
 elif [ ${#SYSTEM_PROMPTS[@]} -eq 1 ]; then
   SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
+  if [ -n "${PREVIOUS_SOURCE}" ] && [ "${PREVIOUS_SOURCE}" != "${SELECTED_PROMPT}" ]; then
+    echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists."
+    echo "  Only one system prompt available — using ${SELECTED_PROMPT}."
+  else
+    echo "  Using system prompt: ${SELECTED_PROMPT}"
+  fi
+  SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
+elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}" ]; then
+  echo ""
+  echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists in the submodule."
+  echo "  Please choose a replacement:"
+  for i in "${!SYSTEM_PROMPTS[@]}"; do
+    echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
+  done
+  printf "Enter choice (1-%d): " "${#SYSTEM_PROMPTS[@]}"
+  read -r sp_choice </dev/tty
+
+  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${#SYSTEM_PROMPTS[@]}" ]; then
+    SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
+  else
+    echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
+    SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
+  fi
   echo "  Using system prompt: ${SELECTED_PROMPT}"
   SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
 elif [ ${#SYSTEM_PROMPTS[@]} -gt 1 ]; then
   echo ""
   echo "Multiple system prompts available. Select one:"
   for i in "${!SYSTEM_PROMPTS[@]}"; do
-    echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
+    marker=""
+    if [ -n "${PREVIOUS_SOURCE}" ] && [ "${SYSTEM_PROMPTS[$i]}" = "${PREVIOUS_SOURCE}" ]; then marker=" (current)"; fi
+    echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}${marker}"
   done
   printf "Enter choice (1-%d): " "${#SYSTEM_PROMPTS[@]}"
   read -r sp_choice </dev/tty

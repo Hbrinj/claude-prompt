@@ -275,6 +275,28 @@ fi
 # Select which system prompt to use
 if [ ${#SYSTEM_PROMPTS[@]} -eq 1 ]; then
   SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
+  if [ -n "${PREVIOUS_SOURCE}" ] && [ "${PREVIOUS_SOURCE}" != "${SELECTED_PROMPT}" ]; then
+    echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists."
+    echo "  Only one system prompt available — using ${SELECTED_PROMPT}."
+  else
+    echo "  Using system prompt: ${SELECTED_PROMPT}"
+  fi
+elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}" ]; then
+  echo ""
+  echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists in the submodule."
+  echo "  Please choose a replacement:"
+  for i in "${!SYSTEM_PROMPTS[@]}"; do
+    echo "    [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
+  done
+  printf "  Select one (1-%d): " "${#SYSTEM_PROMPTS[@]}"
+  read -r sp_choice </dev/tty
+
+  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${#SYSTEM_PROMPTS[@]}" ]; then
+    SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
+  else
+    echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
+    SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
+  fi
   echo "  Using system prompt: ${SELECTED_PROMPT}"
 elif [ -n "${PREVIOUS_SOURCE}" ] && [ -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}" ]; then
   echo "  Previously selected: ${PREVIOUS_SOURCE}"
