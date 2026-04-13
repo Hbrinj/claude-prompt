@@ -50,8 +50,8 @@ Options:
 What this script does:
   1. Adds ${REPO_URL} as a git submodule at SUBMODULE_PATH
   2. Runs: git submodule update --init --recursive
-  3. Symlinks agents/ and skills/ from the submodule into the project-level .claude/
-  4. Merges submodule SYSTEM_PROMPT.md into target CLAUDE.md with interactive prompts
+  3. Symlinks agents/ and skills/ from the submodule into .claude/
+  4. Lets you choose a system prompt (standard or autonomous) and merges it into CLAUDE.md
 
 EOF
 }
@@ -207,19 +207,52 @@ echo "→ Wiring up symlinks in ${CLAUDE_DIR}…"
 create_symlink "${CLAUDE_DIR}/agents" "${SUBMODULE_ABS}/agents" "agents"
 create_symlink "${CLAUDE_DIR}/skills" "${SUBMODULE_ABS}/skills" "skills"
 
-# ── Step 4: SYSTEM_PROMPT.md → CLAUDE.md merge ──────────────────────────────
+# ── Step 4: Select and merge system prompt → CLAUDE.md ───────────────────────
 echo "→ Handling CLAUDE.md…"
 
-SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/SYSTEM_PROMPT.md"
+# Discover available system prompt files in the submodule
+SYSTEM_PROMPTS=()
+while IFS= read -r -d '' sp_file; do
+  SYSTEM_PROMPTS+=("$(basename "$sp_file")")
+done < <(find "${SUBMODULE_ABS}" -maxdepth 1 -name '*SYSTEM_PROMPT*.md' -print0 | sort -z)
+
 PROJECT_CLAUDE_MD="${PROJECT_ROOT}/CLAUDE.md"
 
-if [ ! -f "${SUBMODULE_SYSTEM_PROMPT_MD}" ]; then
-  echo "  Warning: Submodule has no SYSTEM_PROMPT.md. Skipping." >&2
-  record_skipped "CLAUDE.md merge (submodule SYSTEM_PROMPT.md not found)"
+if [ ${#SYSTEM_PROMPTS[@]} -eq 0 ]; then
+  echo "  Warning: No system prompt files found in submodule. Skipping." >&2
+  record_skipped "CLAUDE.md merge (no system prompt files found)"
+elif [ ${#SYSTEM_PROMPTS[@]} -eq 1 ]; then
+  SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
+  echo "  Using system prompt: ${SELECTED_PROMPT}"
+  SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
+elif [ ${#SYSTEM_PROMPTS[@]} -gt 1 ]; then
+  echo ""
+  echo "Multiple system prompts available. Select one:"
+  for i in "${!SYSTEM_PROMPTS[@]}"; do
+    echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
+  done
+  printf "Enter choice (1-%d): " "${#SYSTEM_PROMPTS[@]}"
+  read -r sp_choice </dev/tty
+
+  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${#SYSTEM_PROMPTS[@]}" ]; then
+    SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
+  else
+    echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
+    SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
+  fi
+  echo "  Using system prompt: ${SELECTED_PROMPT}"
+  SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
+fi
+
+if [ ${#SYSTEM_PROMPTS[@]} -eq 0 ]; then
+  : # Already handled above — skip the merge block
+elif [ ! -f "${SUBMODULE_SYSTEM_PROMPT_MD}" ]; then
+  echo "  Warning: Selected file does not exist. Skipping." >&2
+  record_skipped "CLAUDE.md merge (selected system prompt not found)"
 elif [ ! -f "${PROJECT_CLAUDE_MD}" ]; then
   cp "${SUBMODULE_SYSTEM_PROMPT_MD}" "${PROJECT_CLAUDE_MD}"
-  echo "  ✓ CLAUDE.md created from submodule SYSTEM_PROMPT.md"
-  record_action "Created CLAUDE.md from submodule SYSTEM_PROMPT.md"
+  echo "  ✓ CLAUDE.md created from ${SELECTED_PROMPT}"
+  record_action "Created CLAUDE.md from ${SELECTED_PROMPT}"
 else
   # CLAUDE.md already exists — prompt user interactively via /dev/tty
   echo ""
@@ -237,19 +270,20 @@ else
       {
         echo ""
         echo "${SEPARATOR_MARKER}"
+        echo "# claude-prompt-source: ${SELECTED_PROMPT}"
         cat "${SUBMODULE_SYSTEM_PROMPT_MD}"
         echo "# claude-prompt-hash: ${new_hash}"
       } >> "${PROJECT_CLAUDE_MD}"
-      echo "  ✓ Appended submodule SYSTEM_PROMPT.md to existing CLAUDE.md"
-      record_action "Appended submodule SYSTEM_PROMPT.md to existing CLAUDE.md"
+      echo "  ✓ Appended ${SELECTED_PROMPT} to existing CLAUDE.md"
+      record_action "Appended ${SELECTED_PROMPT} to existing CLAUDE.md"
       ;;
     2)
       printf "  This will overwrite your existing CLAUDE.md. Are you sure? (y/N): "
       read -r overwrite_confirm </dev/tty
       if [ "${overwrite_confirm}" = "y" ] || [ "${overwrite_confirm}" = "Y" ]; then
         cp "${SUBMODULE_SYSTEM_PROMPT_MD}" "${PROJECT_CLAUDE_MD}"
-        echo "  ✓ Replaced CLAUDE.md with submodule SYSTEM_PROMPT.md"
-        record_action "Replaced CLAUDE.md with submodule SYSTEM_PROMPT.md"
+        echo "  ✓ Replaced CLAUDE.md with ${SELECTED_PROMPT}"
+        record_action "Replaced CLAUDE.md with ${SELECTED_PROMPT}"
       else
         echo "  Overwrite cancelled. CLAUDE.md left untouched."
         record_skipped "CLAUDE.md overwrite (cancelled by user)"
