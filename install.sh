@@ -221,7 +221,10 @@ while IFS= read -r -d '' sp_file; do
   SYSTEM_PROMPTS+=("$(basename "$sp_file")")
 done < <(find "${SUBMODULE_ABS}" -maxdepth 1 -name '*SYSTEM_PROMPT*.md' -print0 | sort -z)
 
-PROMPT_COUNT=${#SYSTEM_PROMPTS[@]}
+PROMPT_COUNT=0
+if [ ${#SYSTEM_PROMPTS[@]+x} ]; then
+  PROMPT_COUNT=${#SYSTEM_PROMPTS[@]}
+fi
 PROJECT_CLAUDE_MD="${PROJECT_ROOT}/CLAUDE.md"
 
 # Detect previously selected system prompt from existing CLAUDE.md

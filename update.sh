@@ -264,7 +264,10 @@ while IFS= read -r -d '' sp_file; do
   SYSTEM_PROMPTS+=("$(basename "$sp_file")")
 done < <(find "${SUBMODULE_ABS}" -maxdepth 1 -name '*SYSTEM_PROMPT*.md' -print0 | sort -z)
 
-PROMPT_COUNT=${PROMPT_COUNT}
+PROMPT_COUNT=0
+if [ ${#SYSTEM_PROMPTS[@]+x} ]; then
+  PROMPT_COUNT=${#SYSTEM_PROMPTS[@]}
+fi
 
 if [ "${PROMPT_COUNT}" -eq 0 ]; then
   echo "  Warning: No system prompt files found in submodule. Skipping." >&2
