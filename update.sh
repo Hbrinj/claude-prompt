@@ -391,8 +391,8 @@ if $source_changed; then
 else
   echo "The submodule ${SELECTED_PROMPT} has changed. Choose an option:"
 fi
-echo "  [1] Append updated submodule section to CLAUDE.md (replaces previous appended section if present)"
-echo "  [2] Replace entire CLAUDE.md with ${SELECTED_PROMPT}"
+echo "  [1] Add/replace system prompt section with ${SELECTED_PROMPT} (keeps your custom content)"
+echo "  [2] Replace entire CLAUDE.md with ${SELECTED_PROMPT} (overwrites everything)"
 echo "  [3] Skip — leave CLAUDE.md untouched"
 printf "Enter 1, 2, or 3: "
 

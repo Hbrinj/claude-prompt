@@ -294,8 +294,8 @@ else
   # CLAUDE.md already exists — prompt user interactively via /dev/tty
   echo ""
   echo "CLAUDE.md already exists. Choose an option:"
-  echo "  [1] Append submodule SYSTEM_PROMPT.md below a separator (non-destructive)"
-  echo "  [2] Replace CLAUDE.md with submodule SYSTEM_PROMPT.md (overwrites existing)"
+  echo "  [1] Add/replace system prompt section with ${SELECTED_PROMPT} (keeps your custom content)"
+  echo "  [2] Replace entire CLAUDE.md with ${SELECTED_PROMPT} (overwrites everything)"
   echo "  [3] Skip — leave CLAUDE.md untouched"
   printf "Enter 1, 2, or 3: "
 
@@ -304,15 +304,36 @@ else
   case "${claude_choice}" in
     1)
       new_hash="$(compute_hash "${SUBMODULE_SYSTEM_PROMPT_MD}")"
+      tmpfile="$(mktemp)"
+      trap 'rm -f "${tmpfile}"' EXIT
+
+      if grep -qF "${SEPARATOR_MARKER}" "${PROJECT_CLAUDE_MD}" 2>/dev/null; then
+        # Strip the old system prompt block, then append the new one
+        awk -v sep="${SEPARATOR_MARKER}" '
+          $0 == sep { in_block=1; next }
+          in_block && /^# claude-prompt-hash:/ { in_block=0; next }
+          in_block { next }
+          { print }
+        ' "${PROJECT_CLAUDE_MD}" > "${tmpfile}"
+        action_label="Replaced system prompt section with ${SELECTED_PROMPT}"
+      else
+        # No previous block — copy existing content, then append below
+        cp "${PROJECT_CLAUDE_MD}" "${tmpfile}"
+        action_label="Added ${SELECTED_PROMPT} section to CLAUDE.md"
+      fi
+
       {
         echo ""
         echo "${SEPARATOR_MARKER}"
         echo "# claude-prompt-source: ${SELECTED_PROMPT}"
         cat "${SUBMODULE_SYSTEM_PROMPT_MD}"
         echo "# claude-prompt-hash: ${new_hash}"
-      } >> "${PROJECT_CLAUDE_MD}"
-      echo "  ✓ Appended ${SELECTED_PROMPT} to existing CLAUDE.md"
-      record_action "Appended ${SELECTED_PROMPT} to existing CLAUDE.md"
+      } >> "${tmpfile}"
+
+      mv "${tmpfile}" "${PROJECT_CLAUDE_MD}"
+      trap - EXIT
+      echo "  ✓ ${action_label}"
+      record_action "${action_label}"
       ;;
     2)
       printf "  This will overwrite your existing CLAUDE.md. Are you sure? (y/N): "
