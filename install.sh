@@ -153,10 +153,10 @@ else
   record_action "Added submodule ${REPO_URL} → ${SUBMODULE_PATH}"
 fi
 
-# ── Step 2: Init and update ──────────────────────────────────────────────────
-echo "→ Running git submodule update --init --recursive…"
-git submodule update --init --recursive
-record_action "git submodule update --init --recursive"
+# ── Step 2: Init and update to latest remote ─────────────────────────────────
+echo "→ Running git submodule update --init --recursive --remote…"
+git submodule update --init --recursive --remote "${SUBMODULE_PATH}"
+record_action "git submodule update --init --recursive --remote ${SUBMODULE_PATH}"
 
 # ── Step 3: Symlinks into project-level .claude/ ─────────────────────────────
 CLAUDE_DIR="${PROJECT_ROOT}/.claude"
