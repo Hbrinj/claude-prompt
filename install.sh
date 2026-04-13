@@ -230,74 +230,51 @@ if [ -f "${PROJECT_CLAUDE_MD}" ]; then
   PREVIOUS_SOURCE="$(grep -oP '(?<=^# claude-prompt-source: ).+' "${PROJECT_CLAUDE_MD}" 2>/dev/null || true)"
 fi
 
-if [ "${PROMPT_COUNT}" -eq 0 ]; then
-  echo "  Warning: No system prompt files found in submodule. Skipping." >&2
-  record_skipped "CLAUDE.md merge (no system prompt files found)"
-elif [ "${PROMPT_COUNT}" -eq 1 ]; then
-  SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
-  if [ -n "${PREVIOUS_SOURCE}" ] && [ "${PREVIOUS_SOURCE}" != "${SELECTED_PROMPT}" ]; then
-    echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists."
-    echo "  Only one system prompt available — using ${SELECTED_PROMPT}."
+# Helper — prompt user to pick a system prompt, sets SELECTED_PROMPT and SUBMODULE_SYSTEM_PROMPT_MD
+pick_system_prompt() {
+  if [ "${PROMPT_COUNT}" -eq 1 ]; then
+    SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
+    echo "  Using system prompt: ${SELECTED_PROMPT}"
   else
+    echo ""
+    echo "  Available system prompts:"
+    for ((i = 0; i < PROMPT_COUNT; i++)); do
+      marker=""
+      if [ -n "${PREVIOUS_SOURCE}" ] && [ "${SYSTEM_PROMPTS[$i]}" = "${PREVIOUS_SOURCE}" ]; then marker=" (current)"; fi
+      echo "    [$((i + 1))] ${SYSTEM_PROMPTS[$i]}${marker}"
+    done
+    printf "  Select a system prompt (1-%d): " "${PROMPT_COUNT}"
+    read -r sp_choice </dev/tty
+
+    if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${PROMPT_COUNT}" ]; then
+      SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
+    else
+      echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
+      SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
+    fi
     echo "  Using system prompt: ${SELECTED_PROMPT}"
   fi
   SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
-elif [ -n "${PREVIOUS_SOURCE}" ] && [ ! -f "${SUBMODULE_ABS}/${PREVIOUS_SOURCE}" ]; then
-  echo ""
-  echo "  Warning: Previously selected '${PREVIOUS_SOURCE}' no longer exists in the submodule."
-  echo "  Please choose a replacement:"
-  for ((i = 0; i < PROMPT_COUNT; i++)); do
-    echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}"
-  done
-  printf "Enter choice (1-%d): " "${PROMPT_COUNT}"
-  read -r sp_choice </dev/tty
-
-  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${PROMPT_COUNT}" ]; then
-    SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
-  else
-    echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
-    SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
-  fi
-  echo "  Using system prompt: ${SELECTED_PROMPT}"
-  SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
-elif [ "${PROMPT_COUNT}" -gt 1 ]; then
-  echo ""
-  echo "Multiple system prompts available. Select one:"
-  for ((i = 0; i < PROMPT_COUNT; i++)); do
-    marker=""
-    if [ -n "${PREVIOUS_SOURCE}" ] && [ "${SYSTEM_PROMPTS[$i]}" = "${PREVIOUS_SOURCE}" ]; then marker=" (current)"; fi
-    echo "  [$((i + 1))] ${SYSTEM_PROMPTS[$i]}${marker}"
-  done
-  printf "Enter choice (1-%d): " "${PROMPT_COUNT}"
-  read -r sp_choice </dev/tty
-
-  if [[ "${sp_choice}" =~ ^[0-9]+$ ]] && [ "${sp_choice}" -ge 1 ] && [ "${sp_choice}" -le "${PROMPT_COUNT}" ]; then
-    SELECTED_PROMPT="${SYSTEM_PROMPTS[$((sp_choice - 1))]}"
-  else
-    echo "  Invalid choice '${sp_choice}'. Defaulting to ${SYSTEM_PROMPTS[0]}." >&2
-    SELECTED_PROMPT="${SYSTEM_PROMPTS[0]}"
-  fi
-  echo "  Using system prompt: ${SELECTED_PROMPT}"
-  SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
-fi
+}
 
 if [ "${PROMPT_COUNT}" -eq 0 ]; then
-  : # Already handled above — skip the merge block
-elif [ ! -f "${SUBMODULE_SYSTEM_PROMPT_MD}" ]; then
-  echo "  Warning: Selected file does not exist. Skipping." >&2
-  record_skipped "CLAUDE.md merge (selected system prompt not found)"
+  echo "  Warning: No system prompt files found in submodule. Skipping." >&2
+  record_skipped "CLAUDE.md merge (no system prompt files found)"
 elif [ ! -f "${PROJECT_CLAUDE_MD}" ]; then
+  # No CLAUDE.md yet — pick a prompt and create it
+  pick_system_prompt
   cp "${SUBMODULE_SYSTEM_PROMPT_MD}" "${PROJECT_CLAUDE_MD}"
   echo "  ✓ CLAUDE.md created from ${SELECTED_PROMPT}"
   record_action "Created CLAUDE.md from ${SELECTED_PROMPT}"
 else
-  # CLAUDE.md already exists — prompt user interactively via /dev/tty
+  # CLAUDE.md already exists — pick a prompt, then choose how to apply it
+  pick_system_prompt
   echo ""
-  echo "CLAUDE.md already exists. Choose an option:"
-  echo "  [1] Add/replace system prompt section with ${SELECTED_PROMPT} (keeps your custom content)"
-  echo "  [2] Replace entire CLAUDE.md with ${SELECTED_PROMPT} (overwrites everything)"
-  echo "  [3] Skip — leave CLAUDE.md untouched"
-  printf "Enter 1, 2, or 3: "
+  echo "  CLAUDE.md already exists. How should ${SELECTED_PROMPT} be applied?"
+  echo "    [1] Add/replace system prompt section (keeps your custom content)"
+  echo "    [2] Replace entire CLAUDE.md (overwrites everything)"
+  echo "    [3] Skip — leave CLAUDE.md untouched"
+  printf "  Enter 1, 2, or 3: "
 
   read -r claude_choice </dev/tty
 
@@ -308,7 +285,6 @@ else
       trap 'rm -f "${tmpfile}"' EXIT
 
       if grep -qF "${SEPARATOR_MARKER}" "${PROJECT_CLAUDE_MD}" 2>/dev/null; then
-        # Strip the old system prompt block, then append the new one
         awk -v sep="${SEPARATOR_MARKER}" '
           $0 == sep { in_block=1; next }
           in_block && /^# claude-prompt-hash:/ { in_block=0; next }
@@ -317,7 +293,6 @@ else
         ' "${PROJECT_CLAUDE_MD}" > "${tmpfile}"
         action_label="Replaced system prompt section with ${SELECTED_PROMPT}"
       else
-        # No previous block — copy existing content, then append below
         cp "${PROJECT_CLAUDE_MD}" "${tmpfile}"
         action_label="Added ${SELECTED_PROMPT} section to CLAUDE.md"
       fi
