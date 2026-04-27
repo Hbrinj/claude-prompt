@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# install.sh — Install claude-prompt as a git submodule into a target project
-# and wire up agents/ and skills/ into the project-level .claude/
+# install.sh — Install claude-prompt into a project (git submodule) or globally
+# (~/.claude/) and wire up agents/ and skills/
 
 # Ensure bash-compatible array behaviour when piped to zsh (curl | zsh)
 if [ -n "${ZSH_VERSION:-}" ]; then
@@ -11,6 +11,7 @@ set -euo pipefail
 
 REPO_URL="https://github.com/Hbrinj/claude-prompt.git"
 DEFAULT_SUBMODULE_PATH=".claude/claude-prompt"
+INSTALL_MODE=""  # "project" or "global"
 
 # ── Summary tracking ────────────────────────────────────────────────────────
 ACTIONS=()
@@ -43,20 +44,28 @@ usage() {
   cat <<EOF
 Usage: $0 [OPTIONS] [SUBMODULE_PATH]
 
-Install claude-prompt as a git submodule and wire up agents/skills into the project-level .claude/.
+Install claude-prompt into a project or globally and wire up agents/skills.
 
 Arguments:
   SUBMODULE_PATH   Path relative to the target project root where the submodule
-                   will be added. (default: ${DEFAULT_SUBMODULE_PATH})
+                   will be added (project mode only). (default: ${DEFAULT_SUBMODULE_PATH})
 
 Options:
+  --global         Install globally into ~/.claude/ (git clone)
+  --project        Install into the current project's .claude/ (git submodule)
   --help, -h       Print this help message and exit
 
 What this script does:
-  1. Adds ${REPO_URL} as a git submodule at SUBMODULE_PATH
-  2. Runs: git submodule update --init --recursive
-  3. Symlinks agents/ and skills/ from the submodule into .claude/
-  4. Lets you choose a system prompt (standard or autonomous) and merges it into CLAUDE.md
+  Project mode (default when inside a git repo):
+    1. Adds ${REPO_URL} as a git submodule at SUBMODULE_PATH
+    2. Runs: git submodule update --init --recursive
+    3. Symlinks agents/ and skills/ from the submodule into .claude/
+    4. Lets you choose a system prompt and merges it into CLAUDE.md
+
+  Global mode:
+    1. Clones (or updates) ${REPO_URL} into ~/.claude/claude-prompt/
+    2. Symlinks agents/ and skills/ into ~/.claude/
+    3. Lets you choose a system prompt and merges it into ~/.claude/CLAUDE.md
 
 EOF
 }
@@ -69,6 +78,12 @@ for arg in "$@"; do
     --help|-h)
       usage
       exit 0
+      ;;
+    --global)
+      INSTALL_MODE="global"
+      ;;
+    --project)
+      INSTALL_MODE="project"
       ;;
     -*)
       echo "Error: Unknown option: $arg" >&2
@@ -94,19 +109,56 @@ check_command ln
 check_command cp
 check_command awk
 
-# Must be run from the root of a git repository
-if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
-  echo "Error: Not inside a git repository. Run this script from your project root." >&2
+# ── Install mode selection ───────────────────────────────────────────────────
+IN_GIT_REPO=false
+if git rev-parse --show-toplevel >/dev/null 2>&1; then
+  IN_GIT_REPO=true
+fi
+
+if [ -z "${INSTALL_MODE}" ]; then
+  if $IN_GIT_REPO; then
+    echo ""
+    echo "Where would you like to install claude-prompt?"
+    echo "  [1] Project — installs into this project's .claude/ as a git submodule"
+    echo "  [2] Global  — installs into ~/.claude/ via git clone"
+    printf "  Select (1 or 2): "
+    read -r mode_choice </dev/tty
+    case "${mode_choice}" in
+      1) INSTALL_MODE="project" ;;
+      2) INSTALL_MODE="global" ;;
+      *)
+        echo "  Invalid choice '${mode_choice}'. Defaulting to project install." >&2
+        INSTALL_MODE="project"
+        ;;
+    esac
+  else
+    # Not inside a git repo — only global install is possible
+    echo "Not inside a git repository. Proceeding with global install into ~/.claude/."
+    INSTALL_MODE="global"
+  fi
+fi
+
+# Validate mode requirements
+if [ "${INSTALL_MODE}" = "project" ] && ! $IN_GIT_REPO; then
+  echo "Error: --project requires being inside a git repository." >&2
   exit 1
 fi
 
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-if [ "$(pwd)" != "${PROJECT_ROOT}" ]; then
-  echo "Error: Run this script from the project root: ${PROJECT_ROOT}" >&2
-  exit 1
+if [ "${INSTALL_MODE}" = "project" ]; then
+  PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+  if [ "$(pwd)" != "${PROJECT_ROOT}" ]; then
+    echo "Error: Run this script from the project root: ${PROJECT_ROOT}" >&2
+    exit 1
+  fi
+  SUBMODULE_ABS="${PROJECT_ROOT}/${SUBMODULE_PATH}"
+  CLAUDE_DIR="${PROJECT_ROOT}/.claude"
+  PROJECT_CLAUDE_MD="${PROJECT_ROOT}/CLAUDE.md"
+else
+  GLOBAL_DIR="${HOME}/.claude"
+  CLONE_PATH="${GLOBAL_DIR}/claude-prompt"
+  CLAUDE_DIR="${GLOBAL_DIR}"
+  PROJECT_CLAUDE_MD="${GLOBAL_DIR}/CLAUDE.md"
 fi
-
-SUBMODULE_ABS="${PROJECT_ROOT}/${SUBMODULE_PATH}"
 
 # ── Portable hash ─────────────────────────────────────────────────────────────
 compute_hash() {
@@ -128,40 +180,57 @@ compute_hash() {
 # Separator marker — must match update.sh
 SEPARATOR_MARKER="# --- claude-prompt start ---"
 
-# ── Step 1: Add submodule ────────────────────────────────────────────────────
-echo "→ Checking submodule registration…"
+# ── Step 1: Fetch the repo ───────────────────────────────────────────────────
+if [ "${INSTALL_MODE}" = "project" ]; then
+  echo "→ Checking submodule registration…"
 
-GITMODULES="${PROJECT_ROOT}/.gitmodules"
-ALREADY_REGISTERED=false
+  GITMODULES="${PROJECT_ROOT}/.gitmodules"
+  ALREADY_REGISTERED=false
 
-if [ -f "${GITMODULES}" ]; then
-  # Check if this submodule path is already registered (normalize trailing slash)
-  normalized_path="${SUBMODULE_PATH%/}"
-  if git config --file "${GITMODULES}" --get-regexp 'submodule\..*\.path' 2>/dev/null \
-      | awk '{print $2}' \
-      | grep -qxF "${normalized_path}"; then
-    ALREADY_REGISTERED=true
+  if [ -f "${GITMODULES}" ]; then
+    normalized_path="${SUBMODULE_PATH%/}"
+    if git config --file "${GITMODULES}" --get-regexp 'submodule\..*\.path' 2>/dev/null \
+        | awk '{print $2}' \
+        | grep -qxF "${normalized_path}"; then
+      ALREADY_REGISTERED=true
+    fi
   fi
-fi
 
-if $ALREADY_REGISTERED; then
-  echo "  Submodule already registered at '${SUBMODULE_PATH}', skipping git submodule add."
-  record_skipped "git submodule add (already registered at '${SUBMODULE_PATH}')"
+  if $ALREADY_REGISTERED; then
+    echo "  Submodule already registered at '${SUBMODULE_PATH}', skipping git submodule add."
+    record_skipped "git submodule add (already registered at '${SUBMODULE_PATH}')"
+  else
+    echo "  Running: git submodule add ${REPO_URL} ${SUBMODULE_PATH}"
+    git submodule add "${REPO_URL}" "${SUBMODULE_PATH}"
+    record_action "Added submodule ${REPO_URL} → ${SUBMODULE_PATH}"
+  fi
+
+  # ── Step 2: Init and update to latest remote ───────────────────────────────
+  echo "→ Running git submodule update --init --recursive --remote…"
+  git submodule update --init --recursive --remote "${SUBMODULE_PATH}"
+  record_action "git submodule update --init --recursive --remote ${SUBMODULE_PATH}"
+
+  SOURCE_DIR="${SUBMODULE_ABS}"
 else
-  echo "  Running: git submodule add ${REPO_URL} ${SUBMODULE_PATH}"
-  git submodule add "${REPO_URL}" "${SUBMODULE_PATH}"
-  record_action "Added submodule ${REPO_URL} → ${SUBMODULE_PATH}"
+  # Global mode — clone or pull
+  echo "→ Setting up claude-prompt in ${CLONE_PATH}…"
+
+  if [ -d "${CLONE_PATH}/.git" ]; then
+    echo "  Repository already cloned. Pulling latest…"
+    git -C "${CLONE_PATH}" pull --ff-only
+    record_action "Pulled latest changes into ${CLONE_PATH}"
+  else
+    echo "  Cloning ${REPO_URL} into ${CLONE_PATH}…"
+    mkdir -p "$(dirname "${CLONE_PATH}")"
+    git clone "${REPO_URL}" "${CLONE_PATH}"
+    record_action "Cloned ${REPO_URL} → ${CLONE_PATH}"
+  fi
+
+  SOURCE_DIR="${CLONE_PATH}"
 fi
 
-# ── Step 2: Init and update to latest remote ─────────────────────────────────
-echo "→ Running git submodule update --init --recursive --remote…"
-git submodule update --init --recursive --remote "${SUBMODULE_PATH}"
-record_action "git submodule update --init --recursive --remote ${SUBMODULE_PATH}"
-
-# ── Step 3: Symlinks into project-level .claude/ ─────────────────────────────
-CLAUDE_DIR="${PROJECT_ROOT}/.claude"
-
-# Ensure .claude exists
+# ── Step 3: Symlinks into .claude/ ───────────────────────────────────────────
+# Ensure .claude dir exists
 if [ ! -d "${CLAUDE_DIR}" ]; then
   mkdir -p "${CLAUDE_DIR}"
   record_action "Created directory ${CLAUDE_DIR}"
@@ -173,7 +242,7 @@ create_symlink() {
   local label="$3"        # human-readable label for summary
 
   if [ ! -d "${target}" ]; then
-    echo "  Warning: Target directory '${target}' does not exist in submodule. Skipping ${label} symlink." >&2
+    echo "  Warning: Target directory '${target}' does not exist. Skipping ${label} symlink." >&2
     record_skipped "${label} symlink (target directory missing)"
     return
   fi
@@ -209,8 +278,8 @@ create_symlink() {
 }
 
 echo "→ Wiring up symlinks in ${CLAUDE_DIR}…"
-create_symlink "${CLAUDE_DIR}/agents" "${SUBMODULE_ABS}/agents" "agents"
-create_symlink "${CLAUDE_DIR}/skills" "${SUBMODULE_ABS}/skills" "skills"
+create_symlink "${CLAUDE_DIR}/agents" "${SOURCE_DIR}/agents" "agents"
+create_symlink "${CLAUDE_DIR}/skills" "${SOURCE_DIR}/skills" "skills"
 
 # ── Step 4: Select and merge system prompt → CLAUDE.md ───────────────────────
 echo "→ Handling CLAUDE.md…"
@@ -219,13 +288,12 @@ echo "→ Handling CLAUDE.md…"
 SYSTEM_PROMPTS=()
 while IFS= read -r -d '' sp_file; do
   SYSTEM_PROMPTS+=("$(basename "$sp_file")")
-done < <(find "${SUBMODULE_ABS}" -maxdepth 1 -name '*SYSTEM_PROMPT*.md' -print0 | sort -z)
+done < <(find "${SOURCE_DIR}" -maxdepth 1 -name '*SYSTEM_PROMPT*.md' -print0 | sort -z)
 
 PROMPT_COUNT=0
 if [ ${#SYSTEM_PROMPTS[@]+x} ]; then
   PROMPT_COUNT=${#SYSTEM_PROMPTS[@]}
 fi
-PROJECT_CLAUDE_MD="${PROJECT_ROOT}/CLAUDE.md"
 
 # Detect previously selected system prompt from existing CLAUDE.md
 PREVIOUS_SOURCE=""
@@ -257,11 +325,11 @@ pick_system_prompt() {
     fi
     echo "  Using system prompt: ${SELECTED_PROMPT}"
   fi
-  SUBMODULE_SYSTEM_PROMPT_MD="${SUBMODULE_ABS}/${SELECTED_PROMPT}"
+  SUBMODULE_SYSTEM_PROMPT_MD="${SOURCE_DIR}/${SELECTED_PROMPT}"
 }
 
 if [ "${PROMPT_COUNT}" -eq 0 ]; then
-  echo "  Warning: No system prompt files found in submodule. Skipping." >&2
+  echo "  Warning: No system prompt files found. Skipping." >&2
   record_skipped "CLAUDE.md merge (no system prompt files found)"
 elif [ ! -f "${PROJECT_CLAUDE_MD}" ]; then
   # No CLAUDE.md yet — pick a prompt and create it
