@@ -10,7 +10,7 @@ The user has invoked `/grill-plan` with an optional topic as args. The `tasks/` 
 
 ## Target state
 
-`tasks/<slug>.md` exists and contains a fully populated structure: `## Context` (codebase facts and constraints learned during grilling), `## Decisions` (resolved questions with reasoning), either `## Slices` (software work, strict one-cycle TDD per slice) or `## Steps` (non-software work, ordered steps with binary acceptance), and `## Open Questions` (anything grilling could not resolve). Any `## Requirements` section present at invocation is preserved unchanged.
+`tasks/<slug>.md` exists and contains a fully populated structure: `## Context` (codebase facts and constraints learned during grilling), `## Decisions` (resolved questions with reasoning), either `## Slices` (software work, strict one-cycle TDD per slice) or `## Steps` (non-software work, ordered steps with binary acceptance), `## Deferred (out of scope)` (items resolved as "not this feature"), and `## Open Questions` (anything grilling could not resolve). Any `## Requirements` section present at invocation is preserved unchanged. At termination, `## Deferred` rows are consolidated into `/TODO.md`.
 
 ---
 
@@ -36,7 +36,7 @@ Check whether `tasks/<confirmed-slug>.md` exists.
 
 - **Does not exist** → create `tasks/` if missing. Proceed to Step E3.
 - **Exists** → read it fully. Print a one-line summary in this exact format:
-  > `Found existing plan — Decisions: N · Slices/Steps: N · Open Questions: N · Requirements: present|absent · Last updated: <date>`
+  > `Found existing plan — Decisions: N · Slices/Steps: N · Open Questions: N · Deferred: N · Requirements: present|absent · Last updated: <date>`
 
   Then ask: *"Resume from open items, or restart fresh (overwrites the file)?"* Wait for explicit "resume" or "restart". On `restart`, overwrite all sections except `## Requirements` (if present). On `resume`, jump to Step E5 with `## Open Questions` as the starting grilling agenda.
 
@@ -64,7 +64,8 @@ Begin the grilling loop (see *Grilling rules* below). Continue until the user de
 
 - **One question at a time.** Never bundle multiple questions into a single turn.
 - **For each question, provide your recommended answer** with reasoning, the way `/grill-me` does. The user is choosing among options, not generating answers from scratch.
-- **Walk the decision tree in dependency order.** Resolve foundational decisions before dependent ones. If the user picks an option that invalidates a downstream branch, abandon that branch.
+- **Walk the decision tree in dependency order.** Resolve foundational decisions before dependent ones. If the user picks an option that invalidates a downstream branch, ask whether to (a) drop entirely, (b) keep as an Open Question, or (c) defer to `## Deferred (out of scope)`.
+- **Explicit deferral phrasing routes directly to `## Deferred`.** If the user says "defer", "out of scope", "save for later", "not now", or any clear synonym, append the item to `## Deferred (out of scope)` (three columns: `Item | Why deferred | Related decision`) without re-asking. The deferred item is NOT a Decision and NOT an Open Question — it is a "resolved as: not this feature" outcome.
 - **Always delegate codebase exploration to the `Explore` subagent.** Never run inline `Read`, `grep`, `find`, or `Bash` to inspect the codebase during grilling. When you need a codebase fact:
   - Invoke the `Agent` tool with `subagent_type: "Explore"`, `model: "sonnet"`, `description: <short>`, and a focused `prompt`.
   - Instruct the subagent to return a synthesised 1-2 paragraph answer, NOT raw tool output. Example prompt: *"Find where X is currently handled in this repo. Return a 1-2 paragraph synthesis with file:line references — do not paste full file contents."*
@@ -76,10 +77,10 @@ Begin the grilling loop (see *Grilling rules* below). Continue until the user de
 After every 5th grilled question, OR whenever the user types "status", "where are we", or "summary", append this one-line postscript after your next question:
 
 ```
-Status — Mode: <software|general> · Decisions: N · Slices: N (M complete) · Open Q: N · Requirements: N/M · File: tasks/<slug>.md
+Status — Mode: <software|general> · Decisions: N · Slices: N (M complete) · Open Q: N · Deferred: N · Requirements: N/M · File: tasks/<slug>.md
 ```
 
-If the file has no `## Requirements`, omit the `Requirements: N/M` field. The postscript does not consume a turn — it tags onto the next normal grilling message.
+If the file has no `## Requirements`, omit the `Requirements: N/M` field. The `Deferred: N` field is always present (zero when empty). The postscript does not consume a turn — it tags onto the next normal grilling message.
 
 ---
 
@@ -90,9 +91,37 @@ When the user says any of: *"write the plan"*, *"finalise"*, *"that's enough"*, 
 1. Confirm all decisions are recorded in `## Decisions`.
 2. Write the `## Slices` (software) or `## Steps` (general) section per the templates below.
 3. Move any unresolved branches into `## Open Questions` with a one-line description each.
-4. Print a final summary: file path, mode, counts (decisions, slices/steps, open questions).
+4. **Consolidate `## Deferred` into `/TODO.md`** (only if `## Deferred` has entries):
+   - Read `/TODO.md` (create if missing — see *`/TODO.md` schema* below).
+   - For every row in `## Deferred` not already present under the feature's heading in `/TODO.md` (matched by `(slug, item text)`), append a row with columns: `Item | Why deferred | Related decision | Added (today's date) | Status (Open)`.
+   - Existing rows in `/TODO.md` — including hand-edited `Status` values — are preserved verbatim. NEVER overwrite.
+   - The `## Deferred` section in `tasks/<slug>.md` is NOT modified or removed. The flow is one-way and additive.
+5. Print a final summary: file path, mode, counts (decisions, slices/steps, open questions, `Deferred consolidated: N (M new)` if applicable).
 
 The skill exits after the final summary.
+
+### `/TODO.md` schema
+
+When creating `/TODO.md` for the first time, write:
+
+```markdown
+# TODO
+
+Items deferred as out-of-scope from feature planning. Triage manually.
+
+_No deferred items yet._
+```
+
+When appending the first row for a feature, replace the empty-state line (or append after the last existing feature group) with:
+
+```markdown
+## From feature/<slug>
+| Item | Why deferred | Related decision | Added | Status |
+|------|--------------|------------------|-------|--------|
+| ... | ... | ... | YYYY-MM-DD | Open |
+```
+
+When appending rows for a feature that already has a heading in `/TODO.md`, add the new row(s) at the bottom of that feature's table.
 
 ---
 
@@ -157,6 +186,12 @@ _Resolved through grilling. Each entry references the question that produced it.
 ## Slices  ← OR ## Steps depending on Mode
 ...
 
+## Deferred (out of scope)
+_Items resolved as "not this feature" during grilling. Consolidated to `/TODO.md` at termination._
+| Item | Why deferred | Related decision |
+|------|--------------|------------------|
+| ... | ... | ... |
+
 ## Open Questions
 - <unresolved branch + recommendation for follow-up>
 ```
@@ -169,6 +204,7 @@ _Resolved through grilling. Each entry references the question that produced it.
 - Create the `tasks/` directory if it does not exist.
 - Read and write `tasks/<confirmed-slug>.md`.
 - Read existing `tasks/*.md` files to derive context if the user references prior work by slug.
+- Read and write `/TODO.md` (create if missing) — only during Termination step 4 (consolidation).
 
 ## Forbidden actions
 

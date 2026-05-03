@@ -1,9 +1,8 @@
 # TODO
 
-Future-state work not part of any active feature branch.
+Items deferred as out-of-scope from feature planning. Triage manually.
 
-## Fix lint-step / test-step wording in agents/go-developer.md
-
-`agents/go-developer.md:61` reads *"the lint step also runs `go test -race ./...`"*, but `-race` is actually invoked under the test step (Step 5 of the `## Steps` checklist), NOT the lint step (Step 6). One-word fix: change `lint` → `test` on that line so a reader cross-referencing the Concurrency section against the Steps list lands in the right place.
-
-**Why deferred**: surfaced as a SUGGESTION in the cycle 1 review of `add-go-developer` and not fixed per the workflow rule (apply only CRITICAL/MAJOR). Then surfaced again as a candidate to bundle into `extend-slice-aware-to-other-agents` and explicitly rejected (Decision 4 — bounded scope wins). Should be addressed in a future micro-PR.
+## From feature/add-go-developer
+| Item | Why deferred | Related decision | Added | Status |
+|------|--------------|------------------|-------|--------|
+| Fix `lint` → `test` wording in `agents/go-developer.md:61` (line reads *"the lint step also runs `go test -race ./...`"* but `-race` runs under the test step, not the lint step) | Surfaced as SUGGESTION in cycle 1 review of `add-go-developer` (workflow rule: apply only CRITICAL/MAJOR). Then rejected from `extend-slice-aware-to-other-agents` to keep bounded scope (Decision 4 there). Should be addressed in a future micro-PR. | `tasks/extend-slice-aware-to-other-agents.md` Decision 4 | 2026-05-03 | Open |
