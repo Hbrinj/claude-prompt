@@ -9,6 +9,4 @@
 | [ios-developer](ios-developer.md) | Writes iOS Swift code with mandatory unit tests for every ViewModel, UseCase, and Service |
 | [kotlin-backend-developer](kotlin-backend-developer.md) | Writes Kotlin backend code with mandatory unit tests and AWS SDK v2 best practices |
 | [flutter-developer](flutter-developer.md) | Writes Flutter Dart code with mandatory unit, widget, and BLoC tests for every feature |
-| [researcher](researcher.md) | Investigates a topic and writes structured findings into TASK.md for other agents to consume |
-| [planner](planner.md) | Reads researcher findings from TASK.md and writes a step-by-step implementation plan back into TASK.md |
 | [issue-liaison](issue-liaison.md) | Manages GitHub Issue communication — clarifies requirements, posts status updates, and links the final PR |
