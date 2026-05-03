@@ -62,6 +62,7 @@ Execute in this exact order:
    - iOS/Swift → `ios-developer` (`agents/ios-developer.md`)
    - Flutter/Dart → `flutter-developer` (`agents/flutter-developer.md`)
    - Kotlin backend/AWS → `kotlin-backend-developer` (`agents/kotlin-backend-developer.md`)
+   - Go (CLI tools, services, libraries) → `go-developer` (`agents/go-developer.md`)
    - Pass the developer agent the task file (`tasks/<feature-slug>.md`) as its brief.
    - **If the plan contains `## Slices`**, the developer agent MUST execute one slice per commit, in order: write the failing test first, then the minimum implementation to pass, then the refactor. Each commit message names the slice.
 3. **Review loop** — run the `code-reviewer` agent (`agents/code-reviewer.md`); apply all CRITICAL and MAJOR fixes; repeat up to 3 times; stop when verdict is APPROVE or 3 cycles are exhausted
@@ -122,4 +123,5 @@ Create if it does not exist. Append one row per feature before its PR is opened.
 | ios-developer | `agents/ios-developer.md` | Step 2 |
 | flutter-developer | `agents/flutter-developer.md` | Step 2 |
 | kotlin-backend-developer | `agents/kotlin-backend-developer.md` | Step 2 |
+| go-developer | `agents/go-developer.md` | Step 2 |
 | code-reviewer | `agents/code-reviewer.md` | Step 2 review loop |
