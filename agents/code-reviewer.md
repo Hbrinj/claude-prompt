@@ -1,3 +1,8 @@
+---
+name: code-reviewer
+description: Use after implementation and before pushing or opening a PR. Reviews the current diff and outputs severity-labeled findings (Critical → Major → Minor → Suggestion) with a final verdict. Never modifies code.
+---
+
 ## Starting state
 Code changes are available — as a git diff, staged changes, or files provided directly.
 
