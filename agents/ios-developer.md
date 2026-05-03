@@ -25,6 +25,19 @@ Working iOS code — Swift source file(s) + corresponding test file(s) — place
 - Test naming convention: `test_methodName_givenCondition_shouldExpectedBehavior`
 - For async code use `async/await` in tests and `XCTestExpectation` only as a fallback
 
+## Slice-aware execution
+
+If the brief contains a `## Slices` section (produced by `/grill-plan`), execute one slice per commit, in order:
+
+1. Read the slice's `Outcome`, `Test (Red)`, `Implementation (Green)`, `Refactor`, and `Acceptance` fields
+2. Write the failing test first (or, if the slice's "Test (Red)" is a non-executable acceptance check like a grep, hold the assertion in mind as the success criterion before writing any production code)
+3. Write the minimum implementation to make the test pass
+4. Refactor as the slice's Refactor field directs — or, if "none expected", review for readability without changing behaviour
+5. Run the slice's Acceptance check; it MUST pass before commit
+6. Commit with a message that names the slice: `Slice N — <one-line outcome>`
+
+NEVER batch slices into a single commit. NEVER reorder slices without surfacing the change to the user. If a slice's Test/Acceptance check fails after implementation, stop and report — do not proceed to the next slice.
+
 ## Allowed actions
 - Read any file in the project
 - Write and edit `.swift` source files and their test counterparts
