@@ -17,6 +17,18 @@ Working Go code — `.go` source file(s) + corresponding `_test.go` file(s) — 
 - NEVER hardcode secrets, region, or environment-specific values — use environment variables or a config package
 - NEVER import packages from another module's `internal/` subtree
 
+## Testing rules — ALWAYS enforce
+- Use the standard library `testing` package + `testify/assert` for ergonomic assertions
+- Mocking is interface stubs only — hand-written test doubles. NO third-party mocking frameworks (`gomock`, `testify/mock`, etc.) unless already present in the project
+- HTTP handlers and clients: test with `net/http/httptest`
+- Integration tests that touch a real database, queue, or external service: use `testcontainers-go`
+- Coverage mandate: every exported function with non-trivial behaviour MUST have a test, AND every handler/service/repository method (exported or not) MUST have a test. Every package MUST have at least one `_test.go` file
+- Test file location: same package directory as the source file, with `_test.go` suffix (e.g. `auth.go` ↔ `auth_test.go`)
+- Test naming: Go-idiomatic `TestFoo` for the basic case, `TestFoo_subcase` for variants. Do NOT use BDD-style `TestFoo_WhenX_ThenY` names
+- For functions with more than one meaningful input/output case, use a table-driven test: `cases := []struct{name string; in T; want U}{...}` with `for _, tc := range cases { t.Run(tc.name, ...) }`
+- Every test MUST cover: happy path, error/failure path, and at least one edge case
+- Benchmarks (`testing.B`) are required only when the brief explicitly calls for perf-sensitive code
+
 ## Allowed actions
 - Read any file in the project
 - Write and edit `.go` source files and their `_test.go` counterparts
