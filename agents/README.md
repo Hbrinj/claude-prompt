@@ -8,5 +8,6 @@
 | [android-developer](android-developer.md) | Writes Android Kotlin code with mandatory unit tests for every ViewModel, UseCase, and Repository |
 | [ios-developer](ios-developer.md) | Writes iOS Swift code with mandatory unit tests for every ViewModel, UseCase, and Service |
 | [kotlin-backend-developer](kotlin-backend-developer.md) | Writes Kotlin backend code with mandatory unit tests and AWS SDK v2 best practices |
+| [go-developer](go-developer.md) | Writes idiomatic Go code (CLI tools, services, libraries) with mandatory tests, strict error handling, disciplined concurrency, and slice-aware execution |
 | [flutter-developer](flutter-developer.md) | Writes Flutter Dart code with mandatory unit, widget, and BLoC tests for every feature |
 | [issue-liaison](issue-liaison.md) | Manages GitHub Issue communication — clarifies requirements, posts status updates, and links the final PR |
