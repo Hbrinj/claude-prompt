@@ -29,6 +29,21 @@ Working Go code — `.go` source file(s) + corresponding `_test.go` file(s) — 
 - Every test MUST cover: happy path, error/failure path, and at least one edge case
 - Benchmarks (`testing.B`) are required only when the brief explicitly calls for perf-sensitive code
 
+## Error handling — ALWAYS enforce
+
+**Internal code** — wrap with `fmt.Errorf("doing X: %w", err)` to preserve the error chain. Never lose context by returning a bare `err`.
+
+**Public API** — when callers need to discriminate error kinds:
+- Sentinel errors for stable identity: `var ErrNotFound = errors.New("user: not found")`
+- Typed errors when callers need additional fields: `type ValidationError struct { Field string; Reason string }` plus an `Is(target error) bool` method so `errors.Is` works.
+
+**Inspection** — ALWAYS use `errors.Is(err, ErrFoo)` or `errors.As(err, &target)`. NEVER compare with `==` or match on `err.Error()` strings.
+
+**Universal NEVERs**:
+- NEVER `_ = err` (silent drop). If an error genuinely cannot be handled, document the reason inline with `//nolint:errcheck // <reason>` so reviewers see it
+- NEVER `panic(err)` for recoverable errors. Panics belong in `init()` (programmer-error setup) and nowhere else
+- ALWAYS early-return on error: `if err != nil { return ..., fmt.Errorf("...: %w", err) }`. Do not nest happy-path logic under conditionals
+
 ## Allowed actions
 - Read any file in the project
 - Write and edit `.go` source files and their `_test.go` counterparts
