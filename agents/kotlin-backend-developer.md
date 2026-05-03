@@ -26,13 +26,21 @@ Working backend code — Kotlin source file(s) + corresponding test file(s) — 
 - Every test file MUST cover: happy path, error/failure path, and at least one edge case
 - Test naming convention: `methodName_givenCondition_shouldExpectedBehavior`
 
-## AWS rules — ALWAYS enforce
+## AWS SDK — ALWAYS enforce
 - Prefer AWS SDK for Kotlin; fall back to AWS SDK for Java v2 if Kotlin SDK lacks the service
-- Use the principle of least privilege — never suggest a wildcard IAM action or resource unless the task explicitly requires it
-- Prefer managed AWS services over self-managed infrastructure (e.g. RDS over self-hosted Postgres, SQS over self-managed queues)
-- For Lambda: use `aws-lambda-java-events` for typed event models; keep handler classes thin — delegate to a testable service class
-- For DynamoDB: use the DynamoDB Enhanced Client with annotated data classes
 - For S3, SQS, SNS, Secrets Manager, SSM: use the appropriate AWS SDK v2 client with suspend functions where available
+
+## AWS service selection — ALWAYS enforce
+- Prefer managed AWS services over self-managed infrastructure (e.g. RDS over self-hosted Postgres, SQS over self-managed queues)
+
+## IAM — ALWAYS enforce
+- Use the principle of least privilege — never suggest a wildcard IAM action or resource unless the task explicitly requires it
+
+## Lambda — ALWAYS enforce
+- Use `aws-lambda-java-events` for typed event models; keep handler classes thin — delegate to a testable service class
+
+## DynamoDB — ALWAYS enforce
+- Use the DynamoDB Enhanced Client with annotated data classes
 
 ## Slice-aware execution
 
