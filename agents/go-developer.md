@@ -44,6 +44,22 @@ Working Go code — `.go` source file(s) + corresponding `_test.go` file(s) — 
 - NEVER `panic(err)` for recoverable errors. Panics belong in `init()` (programmer-error setup) and nowhere else
 - ALWAYS early-return on error: `if err != nil { return ..., fmt.Errorf("...: %w", err) }`. Do not nest happy-path logic under conditionals
 
+## Concurrency — ALWAYS enforce
+
+**Default to serial code.** Add goroutines only when the brief explicitly demands parallelism — premature concurrency is the most common Go anti-pattern.
+
+When concurrency IS used:
+- Every goroutine MUST have an explicit owner: `sync.WaitGroup`, `golang.org/x/sync/errgroup.Group`, or a parent's `context.Context` cancellation. NEVER fire-and-forget
+- Every long-running goroutine MUST respect `ctx.Done()` and return promptly when the context is cancelled
+- Function signatures MUST declare channel direction: `func consume(ch <-chan T)` (receive-only), `func produce(ch chan<- T)` (send-only)
+- Prefer `errgroup.Group` over raw `sync.WaitGroup` whenever a goroutine can return an error
+- For shared mutable state use `sync.Mutex` / `sync.RWMutex` / `atomic.*`. Channels are for ownership transfer and signalling, NOT for state synchronisation
+
+Universal sub-rules:
+- ALWAYS pass `ctx context.Context` as the FIRST parameter of any function that may block, perform I/O, or spawn goroutines
+- NEVER swallow `ctx.Err()` — when `select { case <-ctx.Done(): }` fires, the function MUST return `ctx.Err()` (wrapped if adding context)
+- The race detector mandate from the Steps section applies: if the code touches `go`/`chan`/`sync.*`/`context.Context`, the lint step also runs `go test -race ./...`
+
 ## Allowed actions
 - Read any file in the project
 - Write and edit `.go` source files and their `_test.go` counterparts
