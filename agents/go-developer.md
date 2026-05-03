@@ -60,6 +60,14 @@ Universal sub-rules:
 - NEVER swallow `ctx.Err()` — when `select { case <-ctx.Done(): }` fires, the function MUST return `ctx.Err()` (wrapped if adding context)
 - The race detector mandate from the Steps section applies: if the code touches `go`/`chan`/`sync.*`/`context.Context`, the lint step also runs `go test -race ./...`
 
+## Module hygiene — ALWAYS enforce
+- Run `go mod tidy` after any change that adds, removes, or moves an import — `go.mod` and `go.sum` MUST stay in sync with the source
+- Run `go mod verify` before reporting done — any mismatch is a stop-and-ask condition
+- Match the project's Go version: read the `go 1.X` directive in `go.mod` and respect it. NEVER silently bump it
+- Surface every newly-introduced direct dependency in the report so the user can audit it
+- Vendoring policy: mirror what the project already does. If `vendor/` exists, keep it in sync. If it does not, do NOT introduce one
+- Review the `go.sum` diff before committing. Unexpected lines (transitive dependencies you did not knowingly pull in, hash changes for already-pinned versions) are a stop-and-ask condition — they may indicate a supply-chain surprise
+
 ## Allowed actions
 - Read any file in the project
 - Write and edit `.go` source files and their `_test.go` counterparts
