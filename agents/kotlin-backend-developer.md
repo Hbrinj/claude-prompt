@@ -34,6 +34,19 @@ Working backend code — Kotlin source file(s) + corresponding test file(s) — 
 - For DynamoDB: use the DynamoDB Enhanced Client with annotated data classes
 - For S3, SQS, SNS, Secrets Manager, SSM: use the appropriate AWS SDK v2 client with suspend functions where available
 
+## Slice-aware execution
+
+If the brief contains a `## Slices` section (produced by `/grill-plan`), execute one slice per commit, in order:
+
+1. Read the slice's `Outcome`, `Test (Red)`, `Implementation (Green)`, `Refactor`, and `Acceptance` fields
+2. Write the failing test first (or, if the slice's "Test (Red)" is a non-executable acceptance check like a grep, hold the assertion in mind as the success criterion before writing any production code)
+3. Write the minimum implementation to make the test pass
+4. Refactor as the slice's Refactor field directs — or, if "none expected", review for readability without changing behaviour
+5. Run the slice's Acceptance check; it MUST pass before commit
+6. Commit with a message that names the slice: `Slice N — <one-line outcome>`
+
+NEVER batch slices into a single commit. NEVER reorder slices without surfacing the change to the user. If a slice's Test/Acceptance check fails after implementation, stop and report — do not proceed to the next slice.
+
 ## Allowed actions
 - Read any file in the project
 - Write and edit `.kt` source files and their test counterparts
