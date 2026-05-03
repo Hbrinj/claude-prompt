@@ -2,15 +2,11 @@
 
 Future-state work not part of any active feature branch.
 
-## Make remaining developer agents slice-aware
+## Fix lint-step / test-step wording in agents/go-developer.md
 
-The `grill-plan` skill produces plans with a `## Slices` section (one vertical slice per TDD cycle). `agents/go-developer.md` ships with its own `## Slice-aware execution` section as the reference implementation. The other four developer agents (`agents/android-developer.md`, `agents/ios-developer.md`, `agents/flutter-developer.md`, `agents/kotlin-backend-developer.md`) do NOT yet have an equivalent section — slice/TDD discipline for those stacks is enforced only by the coordinator via `SYSTEM_PROMPT.md` (synced into `~/.claude/CLAUDE.md`).
+`agents/go-developer.md:61` reads *"the lint step also runs `go test -race ./...`"*, but `-race` is actually invoked under the test step (Step 5 of the `## Steps` checklist), NOT the lint step (Step 6). One-word fix: change `lint` → `test` on that line so a reader cross-referencing the Concurrency section against the Steps list lands in the right place.
 
-This works as long as `grill-plan` is invoked inside the coordinator workflow. A user who invokes `/grill-plan` standalone gets the slice-shaped plan without any agent-side enforcement (for those four stacks).
-
-**Action**: copy the `## Slice-aware execution` section from `agents/go-developer.md` into each of the four other developer agents, with stack-appropriate adjustments to commands and test verbs.
-
-**Why deferred**: the `grill-plan` and `go-developer` changes were each scoped to bound their diffs; converging four more agents in those PRs would have ballooned review cost. Tracked here for a follow-up change that touches all four together.
+**Why deferred**: surfaced as a SUGGESTION in the cycle 1 review of `add-go-developer` and not fixed per the workflow rule (apply only CRITICAL/MAJOR). Then surfaced again as a candidate to bundle into `extend-slice-aware-to-other-agents` and explicitly rejected (Decision 4 — bounded scope wins). Should be addressed in a future micro-PR or alongside the kotlin-backend AWS-rules cleanup below (which already touches developer-agent files).
 
 ## Clean up kotlin-backend AWS rules section
 
