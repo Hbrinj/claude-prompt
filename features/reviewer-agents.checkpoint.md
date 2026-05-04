@@ -1,7 +1,7 @@
 # Checkpoint: reviewer-agents
 
 ## Status
-Step 2 — Implement — IN PROGRESS (awaiting user approval to push + open PR)
+Step 2 — Implement — COMPLETE
 
 ## Completed steps
 - [x] Step 1 — Plan
@@ -9,16 +9,16 @@ Step 2 — Implement — IN PROGRESS (awaiting user approval to push + open PR)
 - [x] Step 2.2 — Code + self-review (bootstrap via `code-reviewer`, cycle 2 APPROVE)
 - [x] Step 2.3 — Coordinator file-type routing gate (skipped — new agents not yet in harness registry; bootstrap covered by code-reviewer)
 - [x] Step 2.4 — Feature log row appended (`In Review`)
-- [x] Step 2.5 — Local commit `22cb1b8`
-- [ ] Step 2.6 — Push to origin (paused at review gate per user memory)
-- [ ] Step 2.7 — Open PR
-- [ ] Step 2.8 — Pipeline
+- [x] Step 2.5 — Local commits `22cb1b8`, `445309c`
+- [x] Step 2.6 — Push to origin
+- [x] Step 2.7 — PR #16 opened — https://github.com/Hbrinj/claude-prompt/pull/16
+- [x] Step 2.8 — Pipeline (no CI configured — no-op)
 
 ## Resumption notes
-All in-repo edits are committed locally on branch `feature/reviewer-agents`. Awaiting explicit user approval at the review gate before push + PR.
+Feature is shipped to PR. Awaiting human review + merge.
 
-Outstanding (non-blocking) findings from cycle 1 of the bootstrap review, deliberately not applied per the CRITICAL+MAJOR-only workflow rule:
-- Over-long non-negotiable rule (consider splitting into shorter binding line + sub-bullet).
+Outstanding (non-blocking) findings from cycle 1 of the bootstrap review, noted in the PR description for the reviewer:
+- Over-long non-negotiable rule (consider splitting into binding line + sub-bullet).
 - "Self-review loop" naming collision in SYSTEM_PROMPT.md sub-step 3 (collides with developer-agent `## Self-review before return`); consider renaming to "coordinator-driven review loop".
 - "Pure-code diffs" wording in sub-step 3 is slightly muddled.
 - `tasks/reviewer-agents.md` Step 5 acceptance list omits `features/reviewer-agents.checkpoint.md`.
