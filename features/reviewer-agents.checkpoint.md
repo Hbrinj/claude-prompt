@@ -1,20 +1,33 @@
 # Checkpoint: reviewer-agents
 
 ## Status
-Step 2 — Implement — IN PROGRESS
+Step 2 — Implement — IN PROGRESS (awaiting user approval to push + open PR)
 
 ## Completed steps
-- [x] Step 1 — Plan (approved by user)
-- [ ] Step 2 — Implement
+- [x] Step 1 — Plan
+- [x] Step 2.1 — Branch (`feature/reviewer-agents`)
+- [x] Step 2.2 — Code + self-review (bootstrap via `code-reviewer`, cycle 2 APPROVE)
+- [x] Step 2.3 — Coordinator file-type routing gate (skipped — new agents not yet in harness registry; bootstrap covered by code-reviewer)
+- [x] Step 2.4 — Feature log row appended (`In Review`)
+- [x] Step 2.5 — Local commit `22cb1b8`
+- [ ] Step 2.6 — Push to origin (paused at review gate per user memory)
+- [ ] Step 2.7 — Open PR
+- [ ] Step 2.8 — Pipeline
 
 ## Resumption notes
-Plan finalised at `tasks/reviewer-agents.md` with 9 decisions, 6 implementation steps, 0 open questions. 5 deferrals consolidated into `/TODO.md` under `## From feature/reviewer-agents`.
+All in-repo edits are committed locally on branch `feature/reviewer-agents`. Awaiting explicit user approval at the review gate before push + PR.
 
-Branch `feature/reviewer-agents` created from `main`. Implementation in progress: writing two new agent files (`agents/prompt-definition-reviewer.md`, `agents/general-reviewer.md`), updating `agents/README.md`, updating `SYSTEM_PROMPT.md` (non-negotiable rule, Step 2 routing sub-step, Agent index), appending to `features/all_features.md`.
+Outstanding (non-blocking) findings from cycle 1 of the bootstrap review, deliberately not applied per the CRITICAL+MAJOR-only workflow rule:
+- Over-long non-negotiable rule (consider splitting into shorter binding line + sub-bullet).
+- "Self-review loop" naming collision in SYSTEM_PROMPT.md sub-step 3 (collides with developer-agent `## Self-review before return`); consider renaming to "coordinator-driven review loop".
+- "Pure-code diffs" wording in sub-step 3 is slightly muddled.
+- `tasks/reviewer-agents.md` Step 5 acceptance list omits `features/reviewer-agents.checkpoint.md`.
+- `agents/prompt-definition-reviewer.md` trigger glob `agents/*.md` is single-level while `skills/**/*.md` is recursive — inconsistent (no current subdir under `agents/` so no live impact).
+- `agents/README.md` placement is role-grouped, not strictly alphabetical as the plan acceptance literally said.
+- `package.json`-style files double-covered by code-reviewer + general-reviewer with no documented precedence.
+- `features/all_features.md` Merged column convention for in-review rows is ambiguous (used `—`).
 
-Bootstrap caveat acknowledged at Step 1 hand-off: the new reviewers cannot self-review on their first introduction (chicken-and-egg). For this feature only, the existing `code-reviewer` will run against the diff as a manual bootstrap — flagged in the PR description.
-
-Will pause at the Step 2 review gate (after commit, before push) to confirm push and PR with the user.
+User reminder owed at hand-off: copy `SYSTEM_PROMPT.md` into `~/.claude/CLAUDE.md` manually to activate workflow change in active session.
 
 ## Last updated
 2026-05-04
