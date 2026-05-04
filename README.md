@@ -10,12 +10,29 @@ This repository contains custom [Claude Code subagents](https://docs.anthropic.c
 
 ```
 agents/
-├── README.md       # Agent catalogue and usage notes
-└── *.md            # Individual agent definitions
+├── README.md         # Agent catalogue and usage notes
+└── *.md              # Individual agent definitions
 skills/
-├── README.md       # Skills catalogue and usage notes
-└── *.md            # Individual skill definitions
+├── README.md         # Skills catalogue and usage notes
+└── *.md              # Individual skill definitions
+SYSTEM_PROMPT.md      # Coordinator workflow — source of truth (committed)
+CLAUDE.md             # Repo conventions for Claude when working in this repo
 ```
+
+## Workflow source of truth
+
+`SYSTEM_PROMPT.md` is the **canonical, version-controlled** coordinator workflow (Step 1 → Plan, Step 2 → Implement, non-negotiable rules, Skill index, Agent index). Two derived copies exist downstream:
+
+- **Consumer repos' `CLAUDE.md`** — kept in sync automatically by the `sync-upstream` skill (`skills/sync-upstream.md`), which writes the latest `SYSTEM_PROMPT.md` content into a guarded block bounded by `<!-- SYSTEM_PROMPT:START -->` / `<!-- SYSTEM_PROMPT:END -->` markers. Anything in the consumer repo's `CLAUDE.md` outside those markers is preserved.
+- **Your `~/.claude/CLAUDE.md`** — Claude Code's global instructions file. Kept in sync **manually** — `sync-upstream` does NOT touch it. After editing `SYSTEM_PROMPT.md`, copy the new content into `~/.claude/CLAUDE.md` yourself if you want the active session and other "raw" sessions (no sync-upstream installed) to pick up the change immediately.
+
+> **When changing the coordinator workflow, ALWAYS edit `SYSTEM_PROMPT.md` in this repo — NEVER edit a derived copy (`~/.claude/CLAUDE.md` or any consumer repo's `CLAUDE.md`) directly.**
+>
+> Editing a derived copy alone is upside-down: the change is not version-controlled, is not shared with other machines or users, and is silently overwritten the next time `sync-upstream` runs in that consumer repo. The fix is one-way: edit `SYSTEM_PROMPT.md` here, commit, then propagate (sync-upstream for consumer repos, manual copy for `~/.claude/CLAUDE.md`).
+>
+> If you're unsure whether a change belongs in `SYSTEM_PROMPT.md` or somewhere else, default to `SYSTEM_PROMPT.md` — it's the workflow's source of truth and the safer place for any coordinator-shaped change.
+
+The same source-of-truth rule applies to `agents/*.md` and `skills/*.md` — the repo is the source; `~/.claude/agents` and `~/.claude/commands` are derived (typically symlinked by `sync-upstream`, see [Usage](#usage)).
 
 ## Usage
 
