@@ -23,3 +23,12 @@ Items deferred as out-of-scope from feature planning. Triage manually.
 | Item | Why deferred | Related decision | Added | Status |
 |------|--------------|------------------|-------|--------|
 | Pre-dispatch overlap detection — at the moment the user provides the parallel feature list, coordinator inspects each plan's file references and warns if two plans touch the same path (e.g. *"plans X and Y both touch `agents/foo.md` — dispatch sequentially?"*). Should specify how plans expose their file references (explicit `## Files` section? heuristic scan?), false-positive tolerance, and whether the warning is advisory or blocking. | Discussed during Q7 grilling; chose the standard GitHub merge flow first because it works without new tooling. Worth revisiting if conflicts become a recurring pain. | Decision 7 | 2026-05-04 | Open |
+
+## From feature/reviewer-agents
+| Item | Why deferred | Related decision | Added | Status |
+|------|--------------|------------------|-------|--------|
+| test-quality reviewer agent | Strong follow-on candidate; reviews test code (coverage gaps, brittle assertions, mocking abuse). Out of scope to keep this feature to the agreed trinity. | Q3 detour: broader reviewer landscape | 2026-05-04 | Open |
+| dependency reviewer agent | Strong follow-on candidate; reviews new package adds (license, maintenance, supply-chain). Out of scope to keep this feature to the agreed trinity. | Q3 detour: broader reviewer landscape | 2026-05-04 | Open |
+| PR / commit-message reviewer agent | Strong follow-on candidate; reviews PR description and commit-message hygiene. Out of scope to keep this feature to the agreed trinity. | Q3 detour: broader reviewer landscape | 2026-05-04 | Open |
+| Wire `security-reviewer` into the Step 2 gate | Different review strategy (full-repo, persistent log); changing the gate's contract beyond what the trinity needs. Stays on-demand. | Q10 (i) | 2026-05-04 | Open |
+| Extract a shared `agents/_reviewer-skeleton.md` template | Premature abstraction at 3 reviewers; existing reviewer agents converge on a skeleton organically. Revisit once the deferred trio above lands and the count is closer to 5. | Q10 (ii) | 2026-05-04 | Open |
