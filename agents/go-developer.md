@@ -73,6 +73,18 @@ Universal sub-rules:
 - Vendoring policy: mirror what the project already does. If `vendor/` exists, keep it in sync. If it does not, do NOT introduce one
 - Review the `go.sum` diff before committing. Unexpected lines (transitive dependencies you did not knowingly pull in, hash changes for already-pinned versions) are a stop-and-ask condition — they may indicate a supply-chain surprise
 
+## Self-review before return
+
+After implementation is complete (in `## Slices` mode: after the LAST slice's commit; otherwise: after the final code change), and BEFORE returning control to the caller, you MUST run a self-review loop:
+
+1. Invoke the `code-reviewer` agent against your working changes on the feature branch.
+2. Apply every CRITICAL and MAJOR finding it surfaces. Minor and Suggestion findings may be deferred — list them in your final report.
+3. Re-invoke `code-reviewer`. Repeat up to 3 total cycles or until the verdict is APPROVE.
+4. If 3 cycles are exhausted without APPROVE, return with status BLOCKED and include the reviewer's outstanding CRITICAL/MAJOR findings in your report.
+5. The self-review fires AFTER the last slice's commit, NEVER between slices — slice-by-slice integrity (Red → Green → Refactor in one cycle) is preserved.
+
+NEVER skip this loop. NEVER claim "no issues" without invoking `code-reviewer`. NEVER bundle a multi-cycle review into one fix commit without surfacing the cycle count in your report.
+
 ## Slice-aware execution
 
 If the brief contains a `## Slices` section (produced by `/grill-plan`), execute one slice per commit, in order:
