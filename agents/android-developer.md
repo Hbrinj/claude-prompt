@@ -28,6 +28,18 @@ Working Android code — Kotlin source file(s) + corresponding test file(s) — 
 - Every test file MUST cover: happy path, error/failure path, and at least one edge case
 - Test naming convention: `methodName_givenCondition_shouldExpectedBehavior`
 
+## Self-review before return
+
+After implementation is complete (in `## Slices` mode: after the LAST slice's commit; otherwise: after the final code change), and BEFORE returning control to the caller, you MUST run a self-review loop:
+
+1. Invoke the `code-reviewer` agent against your working changes on the feature branch.
+2. Apply every CRITICAL and MAJOR finding it surfaces. Minor and Suggestion findings may be deferred — list them in your final report.
+3. Re-invoke `code-reviewer`. Repeat up to 3 total cycles or until the verdict is APPROVE.
+4. If 3 cycles are exhausted without APPROVE, return with status BLOCKED and include the reviewer's outstanding CRITICAL/MAJOR findings in your report.
+5. The self-review fires AFTER the last slice's commit, NEVER between slices — slice-by-slice integrity (Red → Green → Refactor in one cycle) is preserved.
+
+NEVER skip this loop. NEVER claim "no issues" without invoking `code-reviewer`. NEVER bundle a multi-cycle review into one fix commit without surfacing the cycle count in your report.
+
 ## Slice-aware execution
 
 If the brief contains a `## Slices` section (produced by `/grill-plan`), execute one slice per commit, in order:
