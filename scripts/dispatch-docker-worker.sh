@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Dispatch one feature to a docker worker.
 #
-# Usage: scripts/dispatch-docker-worker.sh <slug> [base-branch]
+# Usage: scripts/dispatch-docker-worker.sh [--dry-run] <slug> [base-branch]
+#
+# Flags:
+#   --dry-run  Print resolved REPO_ROOT, SCRIPT_DIR, BUILD_CONTEXT, WT_DIR,
+#              and BRANCH on stable lines and exit 0 without touching docker.
 #
 # Required env:
 #   CLAUDE_CODE_OAUTH_TOKEN — claude auth token, forwarded to the container.
@@ -15,6 +19,18 @@
 #   ../wt-<slug>/.worker-result.json — structured result file
 set -euo pipefail
 
+DRY_RUN=false
+ARGS=()
+for arg in "$@"; do
+  if [ "$arg" = "--dry-run" ]; then
+    DRY_RUN=true
+  else
+    ARGS+=("$arg")
+  fi
+done
+# Restore positional args without the consumed flag.
+set -- "${ARGS[@]+"${ARGS[@]}"}"
+
 SLUG="${1:?slug required}"
 BASE="${2:-main}"
 TIMEOUT_SECONDS="${WORKER_TIMEOUT:-1800}"
@@ -27,8 +43,22 @@ if ! [[ "$SLUG" =~ ^[A-Za-z0-9_-]+$ ]]; then
   exit 2
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_CONTEXT="$REPO_ROOT/docker/"
 cd "$REPO_ROOT"
+
+WT_DIR="$(cd "$REPO_ROOT/.." && pwd)/wt-${SLUG}"
+BRANCH="feature/${SLUG}"
+
+if [ "$DRY_RUN" = true ]; then
+  printf 'REPO_ROOT=%s\n' "$REPO_ROOT"
+  printf 'SCRIPT_DIR=%s\n' "$SCRIPT_DIR"
+  printf 'BUILD_CONTEXT=%s\n' "$BUILD_CONTEXT"
+  printf 'WT_DIR=%s\n' "$WT_DIR"
+  printf 'BRANCH=%s\n' "$BRANCH"
+  exit 0
+fi
 
 if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
   echo "ERROR: CLAUDE_CODE_OAUTH_TOKEN env var is required." >&2
@@ -45,8 +75,6 @@ if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
   docker build -t "$IMAGE" "$REPO_ROOT/docker/" >/dev/null
 fi
 
-WT_DIR="$(cd "$REPO_ROOT/.." && pwd)/wt-${SLUG}"
-BRANCH="feature/${SLUG}"
 CONTAINER_NAME="claude-worker-${SLUG}-$$"
 
 if [ ! -d "$WT_DIR" ]; then
