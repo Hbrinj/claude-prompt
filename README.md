@@ -127,6 +127,19 @@ You are a specialist in …
 - …
 ```
 
+## Dispatch scripts — host requirements
+
+The scripts under `scripts/` (notably `dispatch-docker-worker.sh` and `test-dispatch-parallel.sh`) rely on GNU tooling that ships by default on Linux but **not on macOS**. Before running them on a Mac, install:
+
+```bash
+brew install coreutils flock
+```
+
+- `coreutils` provides `timeout` (used to bound worker wall-clock).
+- `flock` provides the file lock used by the parallel-dispatch event log.
+
+Without these, you will see `timeout: command not found` and `flock: command not found`. Linux hosts and the Docker worker image already include both.
+
 ## Contributing
 
 - Keep each agent and skill focused on a single responsibility.
