@@ -32,3 +32,10 @@ Items deferred as out-of-scope from feature planning. Triage manually.
 | PR / commit-message reviewer agent | Strong follow-on candidate; reviews PR description and commit-message hygiene. Out of scope to keep this feature to the agreed trinity. | Q3 detour: broader reviewer landscape | 2026-05-04 | Open |
 | Wire `security-reviewer` into the Step 2 gate | Different review strategy (full-repo, persistent log); changing the gate's contract beyond what the trinity needs. Stays on-demand. | Q10 (i) | 2026-05-04 | Open |
 | Extract a shared `agents/_reviewer-skeleton.md` template | Premature abstraction at 3 reviewers; existing reviewer agents converge on a skeleton organically. Revisit once the deferred trio above lands and the count is closer to 5. | Q10 (ii) | 2026-05-04 | Open |
+
+## From feature/parallel-docker-workers
+| Item | Why deferred | Related decision | Added | Status |
+|------|--------------|------------------|-------|--------|
+| Long-lived worker pool with task queue | Different product than feature-scoped containers; only worth building if there's a 24/7 worker need we don't currently have | Decision 5 | 2026-05-05 | Open |
+| Replace `parallel-dispatch.md` entirely with the Docker variant | Worktree dispatch has zero infra cost and remains the right default for most parallel work; revisit only if Docker dispatch becomes universally preferred | Decision 6 | 2026-05-05 | Open |
+| Add a `shell-docker-developer` agent | No language-specific developer agent in the existing index fits Bash/Docker/Markdown work in this meta/skill-library repo; coordinator implements such changes directly. Worth grilling its own scope (when it owns implementation, what tools it gets, how it interacts with `code-reviewer`). | Step 2 implementation routing | 2026-05-05 | Open |
