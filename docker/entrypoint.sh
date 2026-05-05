@@ -64,14 +64,28 @@ After writing the result file, stop.
 EOF
 )
 
-claude --print --dangerously-skip-permissions "$PROMPT" || true
+CLAUDE_STDERR=$(mktemp)
+set +e
+claude --print --dangerously-skip-permissions "$PROMPT" 2> "$CLAUDE_STDERR"
+CLAUDE_EXIT=$?
+set -e
 
 if [ ! -f "$RESULT_FILE" ]; then
-  write_blocked "worker exited without writing result file" "no .worker-result.json after claude --print"
+  # Worker did not write the result file — capture the actual claude exit
+  # code and a tail of stderr so the host can see why (auth failure, OOM,
+  # rate limit, etc.) rather than the generic "no result file".
+  TAIL=$(tail -c 1024 "$CLAUDE_STDERR" 2>/dev/null | tr '\n' ' ' | head -c 1024)
+  rm -f "$CLAUDE_STDERR"
+  jq -n --arg ec "$CLAUDE_EXIT" --arg err "$TAIL" \
+    '{status:"BLOCKED",branch:null,commits:[],summary:"claude --print did not write result file",blockers:["claude exit=\($ec)","stderr-tail: \($err)"]}' \
+    > "$RESULT_FILE"
   exit 1
 fi
+rm -f "$CLAUDE_STDERR"
 
 if ! jq -e '.status == "APPROVE" or .status == "BLOCKED"' "$RESULT_FILE" >/dev/null 2>&1; then
-  write_blocked "worker wrote malformed result file" "status field missing or not APPROVE/BLOCKED"
+  # Preserve the agent's malformed file for forensics before overwriting.
+  mv "$RESULT_FILE" "${RESULT_FILE}.malformed" 2>/dev/null || true
+  write_blocked "worker wrote malformed result file" "status field missing or not APPROVE/BLOCKED (original at .worker-result.json.malformed)"
   exit 1
 fi
