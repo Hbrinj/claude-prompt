@@ -1,18 +1,19 @@
 # Checkpoint: location-independent-dispatch-wrapper
 
 ## Status
-Step 1 — Plan — COMPLETE
-Step 2 — Implement — PAUSED (awaiting prerequisite feature)
+Step 2 — Implement — COMPLETE
 
 ## Completed steps
 - [x] Step 1 — Plan
-- [ ] Step 2 — Implement
+- [x] Step 2 — Implement
 
 ## Resumption notes
-- Plan finalised at `tasks/location-independent-dispatch-wrapper.md` and approved by user.
-- Step 2 paused before any branch was created. No code changes on disk.
-- Reason for pause: implementation requires a developer agent specialised for bash/shell + markdown prose, which does not exist in the current `agents/` index. User selected option (c) — add a `shell-developer` agent first, then return to this feature and dispatch its 4 slices to that agent.
-- When resuming: re-confirm the plan still reflects current repo state (paths, line numbers cited in `## Context` may have drifted), then proceed with Step 2 starting at branch creation `feature/location-independent-dispatch-wrapper`.
+- Branch `feature/location-independent-dispatch-wrapper` pushed to origin.
+- Dispatched to the newly-merged `shell-developer` agent (first real-world use). All 4 slices completed under strict TDD with one commit per slice; agent self-review (`code-reviewer`) converged at cycle 2 with APPROVE (cycle 1 surfaced one MAJOR — broken `grep -qv` negative assertion in the slice-3 test — fixed in commit 92923a3).
+- Coordinator file-type routing gate ran two reviewers:
+  - `prompt-definition-reviewer` for `skills/parallel-docker-dispatch.md` — cycle 1 surfaced 2 MAJOR (`$WRAPPER` shell variable doesn't survive between `Bash` tool calls); fixed in coordinator commit `ed34a19` (literal-substitution model). Cycle 2: APPROVE.
+  - `general-reviewer` for `README.md` — APPROVE on cycle 1 (3 MINOR / 2 SUGGESTION surfaced for the gate, not applied).
+- Awaiting user approval at the Step 2.6 review gate before opening the PR.
 
 ## Last updated
 2026-05-05
