@@ -44,7 +44,7 @@ if ! [[ "$SLUG" =~ ^[A-Za-z0-9_-]+$ ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
 BUILD_CONTEXT="$REPO_ROOT/docker/"
 cd "$REPO_ROOT"
 
