@@ -68,6 +68,7 @@ Execute in this exact order:
    - Flutter/Dart → `flutter-developer` (`agents/flutter-developer.md`)
    - Kotlin backend/AWS → `kotlin-backend-developer` (`agents/kotlin-backend-developer.md`)
    - Go (CLI tools, services, libraries) → `go-developer` (`agents/go-developer.md`)
+   - Bash/shell scripts (and the adjacent markdown prose that documents them — skill prompts, READMEs, sibling agent prompts) → `shell-developer` (`agents/shell-developer.md`)
    - Pass the developer agent the task file (`tasks/<feature-slug>.md`) as its brief.
    - **If the plan contains `## Slices`**, the developer agent MUST execute one slice per commit, in order: write the failing test first, then the minimum implementation to pass, then the refactor. Each commit message names the slice.
    - The developer agent owns its own self-review loop per its agent prompt (`## Self-review before return`): after the last slice/commit, it invokes `code-reviewer`, applies CRITICAL+MAJOR findings, and repeats up to 3 cycles or until APPROVE before returning. The coordinator does NOT run `code-reviewer` separately in serial mode.
@@ -132,6 +133,7 @@ Create if it does not exist. Append one row per feature before its PR is opened.
 | flutter-developer | `agents/flutter-developer.md` | Step 2 |
 | kotlin-backend-developer | `agents/kotlin-backend-developer.md` | Step 2 |
 | go-developer | `agents/go-developer.md` | Step 2 |
+| shell-developer | `agents/shell-developer.md` | Step 2 |
 | code-reviewer | `agents/code-reviewer.md` | Step 2 — invoked by the developer agent's self-review loop and by `parallel-dispatch` for the combined-diff pass |
 | prompt-definition-reviewer | `agents/prompt-definition-reviewer.md` | Step 2 — invoked by the coordinator's file-type routing gate when the diff touches `agents/` or `skills/` |
 | general-reviewer | `agents/general-reviewer.md` | Step 2 — invoked by the coordinator's file-type routing gate when the diff touches the general allowlist (docs, configs, plan/feature-log files) |
