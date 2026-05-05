@@ -16,5 +16,14 @@ if ! grep -qE 'Claude Code|claude code|claude-code' <<<"$OUTPUT"; then
   exit 1
 fi
 
-echo "PASS: image builds and claude reports a version."
+# claude CLI refuses --dangerously-skip-permissions when running as root, so the
+# image's default user must be non-root. macOS dispatch relies on this default
+# (no --user flag is passed); Linux dispatch overrides via --user $(id -u):$(id -g).
+DEFAULT_UID="$(docker run --rm "$IMAGE" id -u)"
+if [ "$DEFAULT_UID" = "0" ]; then
+  echo "FAIL: image default user is root (uid 0); claude --dangerously-skip-permissions will refuse."
+  exit 1
+fi
+
+echo "PASS: image builds, claude reports a version, default user is non-root (uid=$DEFAULT_UID)."
 echo "  $OUTPUT"
