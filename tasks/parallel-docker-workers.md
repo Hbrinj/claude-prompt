@@ -73,8 +73,10 @@ _Resolved through grilling. Each entry references the question that produced it.
 | Replace `parallel-dispatch.md` entirely with the Docker variant | Worktree dispatch has zero infra cost and remains the right default for most parallel work; revisit only if Docker dispatch becomes universally preferred | Decision 6 |
 
 ## Open Questions
-- **Exact env var name for the OAuth token** — Decision 3 names `CLAUDE_CODE_OAUTH_TOKEN` as the working assumption. Confirm against current `claude` CLI docs at implementation time; if the CLI uses a different variable, update Slice 2 and the dispatch wrapper.
 - **Image hosting** — initial assumption is local `docker build` only (single-dev-machine setup, no registry push). If a second machine ever needs to dispatch, add a registry push step. Not blocking.
-- **MCP server isolation** — the host's `claude` config may include MCP servers (Gmail, Calendar, Drive). The in-container `claude --print` runs without `~/.claude` mounted (per Decision 3), so it should not see those MCP servers, but the entrypoint should explicitly start with a clean config dir to be safe. Verify during Slice 2.
-- **Combined-diff `code-reviewer` pass** — assumed mechanically identical to `parallel-dispatch` (branches still on the host post-dispatch, so the pass runs on the host the same way). Confirm during Slice 4 skill-prose drafting; if subtleties surface, add a Decision row.
+- **MCP server isolation** — the host's `claude` config may include MCP servers (Gmail, Calendar, Drive). The in-container `claude --print` runs without `~/.claude` mounted (per Decision 3), so it should not see those MCP servers, but the entrypoint does not explicitly clear `HOME` or pin `--mcp-config /dev/null`. Worth verifying during the first live `scripts/test-entrypoint.sh` run.
 - **Token rotation mid-dispatch** — if the OAuth token expires while a long-running container is mid-flight, the worker fails. Out of scope for this skill; reasonable mitigation is to mint a fresh token before any large parallel run.
+
+## Resolved during implementation
+- **OAuth env var name** — confirmed `CLAUDE_CODE_OAUTH_TOKEN` (verified against the `claude` binary's embedded strings during Slice 2). Used by entrypoint, dispatch wrapper, and all test scripts.
+- **Combined-diff `code-reviewer` pass** — confirmed mechanically identical to `parallel-dispatch`; branches live in worktrees on the host post-dispatch, so the existing pass works unchanged. Documented as cross-reference in `skills/parallel-docker-dispatch.md` Step 6.
