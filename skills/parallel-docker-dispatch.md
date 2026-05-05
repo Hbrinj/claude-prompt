@@ -68,8 +68,14 @@ branches, no in-progress checkpoint, no duplicate slugs) PLUS:
   ~1–2 GB and worth surfacing).
 - `[ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]`. If not → STOP and tell the user to
   export it.
-- `[ -x scripts/dispatch-docker-worker.sh ]`. If not → STOP (the skill is
-  unusable without the wrapper).
+- Resolve the wrapper path with a project-then-global fallback: prefer
+  `.claude/claude-prompt/scripts/dispatch-docker-worker.sh` (project install);
+  fall back to `~/.claude/claude-prompt/scripts/dispatch-docker-worker.sh`
+  (global install). Store the resolved absolute path as `$WRAPPER` for use
+  in dispatch. If neither exists → STOP (the skill is unusable without the
+  wrapper). `install.sh` only symlinks `agents/`, `skills/`, and (global)
+  `commands/` into `.claude/`; `scripts/` is not exposed under the consumer
+  repo root, so relative-path invocation does NOT work.
 
 If validation fails for any feature, STOP and report exactly which checks
 failed. Do NOT dispatch a partial batch.
@@ -88,8 +94,12 @@ In ONE coordinator message, emit one `Bash` tool-use block per feature in
 the active slot. Each call uses:
 
 - `run_in_background: true` — completion lands as a notification.
-- `command`: `scripts/dispatch-docker-worker.sh <slug>` (with optional
-  trailing base branch if not `main`).
+- `command`: `"$WRAPPER" <slug>` — the absolute wrapper path resolved in
+  Step 1 (project install: `.claude/claude-prompt/scripts/dispatch-docker-worker.sh`;
+  global install: `~/.claude/claude-prompt/scripts/dispatch-docker-worker.sh`).
+  Append a trailing base branch if not `main`. The wrapper resolves the
+  consumer's repo root from the caller's CWD via `git rev-parse --show-toplevel`,
+  so the coordinator must invoke it from inside the consumer git repo.
 - `description`: `"Docker worker: <slug>"`.
 - Optional env override per dispatch: `WORKER_TIMEOUT=<seconds>` for
   known-large features (default 1800 = 30 min).
@@ -155,8 +165,11 @@ Advisory only; does not block any merge.
 ## Allowed actions
 
 - All actions from `parallel-dispatch.md` (`Allowed actions` section).
-- Run `Bash` calls invoking `scripts/dispatch-docker-worker.sh` with
-  `run_in_background: true`.
+- Run `Bash` calls invoking the resolved wrapper path
+  (`.claude/claude-prompt/scripts/dispatch-docker-worker.sh` for project
+  installs, `~/.claude/claude-prompt/scripts/dispatch-docker-worker.sh` for
+  global installs) with `run_in_background: true`, from inside the consumer
+  git repo.
 - Read `../wt-<slug>/.worker-result.json` for each dispatched feature.
 - Run `docker version`, `docker image inspect`, `docker build`,
   `docker ps -a` for pre-dispatch checks and post-dispatch hygiene.

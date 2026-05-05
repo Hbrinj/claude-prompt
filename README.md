@@ -140,6 +140,20 @@ brew install coreutils flock
 
 Without these, you will see `timeout: command not found` and `flock: command not found`. Linux hosts and the Docker worker image already include both.
 
+### Invocation
+
+`install.sh` clones this repo to `~/.claude/claude-prompt/` (global install) or `<project>/.claude/claude-prompt/` (project install) and only symlinks `agents/`, `skills/`, and (global) `commands/` into `.claude/`. `scripts/` is not exposed at the consumer repo root, so the dispatch wrapper must be invoked via its absolute clone path:
+
+```bash
+# Global install
+~/.claude/claude-prompt/scripts/dispatch-docker-worker.sh <slug>
+
+# Project install (run from inside the consumer repo)
+.claude/claude-prompt/scripts/dispatch-docker-worker.sh <slug>
+```
+
+The wrapper resolves the consumer's repo root from the caller's CWD via `git rev-parse --show-toplevel`, so always invoke it from inside the consumer git repo. A `--dry-run` flag prints the resolved `REPO_ROOT`, `SCRIPT_DIR`, `BUILD_CONTEXT`, `WT_DIR`, and `BRANCH` and exits without touching docker — useful for sanity-checking the path resolution.
+
 ## Contributing
 
 - Keep each agent and skill focused on a single responsibility.
