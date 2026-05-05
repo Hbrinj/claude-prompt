@@ -10,3 +10,4 @@ Thumbs.db
 
 # Local Claude overrides (keep agents/ tracked, not local config)
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
