@@ -12,4 +12,5 @@
 | [kotlin-backend-developer](kotlin-backend-developer.md) | Writes Kotlin backend code with mandatory unit tests and AWS SDK v2 best practices |
 | [go-developer](go-developer.md) | Writes idiomatic Go code (CLI tools, services, libraries) with mandatory tests, strict error handling, disciplined concurrency, and slice-aware execution |
 | [flutter-developer](flutter-developer.md) | Writes Flutter Dart code with mandatory unit, widget, and BLoC tests for every feature |
+| [shell-developer](shell-developer.md) | Writes bash/shell scripts with mandatory `scripts/test-*.sh` test scripts, strict-mode hygiene, and portability-aware tooling — also keeps adjacent markdown prose (skill prompts, READMEs) in sync with each script's contract |
 | [issue-liaison](issue-liaison.md) | Manages GitHub Issue communication — clarifies requirements, posts status updates, and links the final PR |
