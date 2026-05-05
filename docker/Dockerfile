@@ -28,6 +28,9 @@ ENV GOPATH=/root/go
 
 RUN npm install -g @anthropic-ai/claude-code
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 WORKDIR /workspace
 
-CMD ["claude", "--help"]
+CMD ["/entrypoint.sh"]
