@@ -1,3 +1,8 @@
+---
+Name: parallel-docker-dispatch
+Description: Docker variant of parallel-dispatch — fans out ≥2 features to claude-worker containers with full in-container freedom (open network, root filesystem). Opt-in via explicit "in containers" / "with docker" / "dockerised" trigger phrasing. Defers shared semantics (cap reasoning, gate flow, combined-diff pass) to parallel-dispatch.md.
+---
+
 # parallel-docker-dispatch
 
 Docker variant of `parallel-dispatch`. Each worker agent runs inside its own

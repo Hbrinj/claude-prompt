@@ -1,9 +1,16 @@
 # _canary
 
-Canary fixture for `parallel-docker-dispatch`. A worker dispatched against this
-plan should produce a single commit that adds `CANARY.txt` to its worktree, and
-nothing else. Used to validate end-to-end dispatch wiring without spending real
-implementation time.
+> **Test fixture — not a grilled plan.** This file is consumed by
+> `scripts/test-dispatch-single.sh` and `scripts/test-dispatch-parallel.sh`
+> to validate the `parallel-docker-dispatch` wiring end-to-end. The full
+> grilled-plan conventions (`## Context`, `## Decisions`, `## Slices`,
+> `## Open Questions`) deliberately do NOT apply here — only `## Steps`
+> is meaningful, and the leading underscore in the slug marks it as a
+> non-feature fixture.
+
+A worker dispatched against this plan should produce a single commit that adds
+`CANARY.txt` to its worktree, and nothing else. Used to validate end-to-end
+dispatch wiring without spending real implementation time.
 
 ## Steps
 
