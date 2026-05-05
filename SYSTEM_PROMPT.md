@@ -57,6 +57,8 @@ MUST wait for explicit approval before Step 2.
 
 **Parallel-dispatch trigger** — if the user names ≥2 features in a single dispatch, follow `skills/parallel-dispatch.md` for fan-out, concurrency cap, per-feature gates, and combined-diff reviewer pass. The serial sub-steps below describe the single-feature path; the parallel skill reuses them per feature.
 
+**Docker-dispatch trigger** — if the parallel dispatch instruction also explicitly says "in containers", "with docker", or "dockerised" (or close variant), follow `skills/parallel-docker-dispatch.md` instead. Same cap-of-3 and per-feature gate flow; workers run inside `claude-worker` containers with full in-container freedom. No silent mode switch — without the trigger phrase, default to `parallel-dispatch.md`.
+
 Execute in this exact order:
 
 1. **Branch** — create `feature/<feature_name>` or `fix/<issue_name>`
@@ -119,6 +121,7 @@ Create if it does not exist. Append one row per feature before its PR is opened.
 |-------|------|-----------|
 | grill-plan | `skills/grill-plan.md` | Step 1 |
 | parallel-dispatch | `skills/parallel-dispatch.md` | Step 2 (when ≥2 features dispatched together) |
+| parallel-docker-dispatch | `skills/parallel-docker-dispatch.md` | Step 2 (when ≥2 features dispatched together AND user signals containerised execution) |
 
 ## Agent index
 | Agent | File | Called in |
