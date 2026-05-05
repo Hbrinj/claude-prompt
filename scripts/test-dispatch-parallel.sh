@@ -18,6 +18,8 @@ cd "$REPO_ROOT"
 SLUGS=(_canary_a _canary_b _canary_c _canary_d)
 CAP=3
 
+EVENT_LOG=$(mktemp)
+
 cleanup() {
   for s in "${SLUGS[@]}"; do
     git worktree remove --force "$REPO_ROOT/../wt-$s" 2>/dev/null || true
@@ -26,33 +28,30 @@ cleanup() {
     rm -f "$REPO_ROOT/tasks/$s.md"
   done
   docker ps -a --filter "name=claude-worker-_canary_" -q | xargs -r docker rm -f >/dev/null 2>&1 || true
+  rm -f "$EVENT_LOG"
 }
 trap cleanup EXIT
 cleanup
+: > "$EVENT_LOG"  # recreate after cleanup wiped it
 
-# Generate canary fixtures
+# Generate canary fixtures with unique CANARY-<slug>.txt names so worktrees stay
+# distinct in any post-hoc inspection.
 for s in "${SLUGS[@]}"; do
   cp "$REPO_ROOT/tasks/_canary.md" "$REPO_ROOT/tasks/$s.md"
-  # Make CANARY.txt name unique per slug to avoid file collisions in any shared
-  # state (worktrees are isolated, but be explicit).
   sed -i.bak "s/CANARY.txt/CANARY-${s}.txt/g" "$REPO_ROOT/tasks/$s.md"
   rm "$REPO_ROOT/tasks/$s.md.bak"
 done
 
-# Concurrency monitor (background): every 0.5s record the count of running
-# claude-worker containers. We assert peak <= CAP at the end.
-PEAK_FILE=$(mktemp)
-echo 0 > "$PEAK_FILE"
-(
-  while true; do
-    count=$(docker ps --filter "name=claude-worker-_canary_" -q | wc -l | tr -d ' ')
-    peak=$(cat "$PEAK_FILE")
-    if [ "$count" -gt "$peak" ]; then echo "$count" > "$PEAK_FILE"; fi
-    sleep 0.5
-  done
-) &
-MONITOR_PID=$!
-trap 'kill $MONITOR_PID 2>/dev/null || true; cleanup' EXIT
+# Concurrency assertion strategy: instead of polling `docker ps` (which can
+# miss sub-sample-interval bursts), every dispatch invocation writes a START
+# line before docker run and an END line after. Lines are appended atomically
+# under flock; post-hoc we walk the log in order and track peak depth.
+log_event() {
+  local kind="$1" slug="$2"
+  ( flock 9; printf '%s %s\n' "$kind" "$slug" >> "$EVENT_LOG" ) 9>"${EVENT_LOG}.lock"
+}
+export -f log_event
+export EVENT_LOG
 
 # Fan out with semaphore of $CAP using a FIFO. Each free slot is one token.
 SEM=$(mktemp -u)
@@ -64,7 +63,14 @@ for ((i=0; i<CAP; i++)); do echo >&3; done
 PIDS=()
 for s in "${SLUGS[@]}"; do
   read -u 3
-  ( bash "$REPO_ROOT/scripts/dispatch-docker-worker.sh" "$s"; echo >&3 ) &
+  (
+    log_event START "$s"
+    bash "$REPO_ROOT/scripts/dispatch-docker-worker.sh" "$s"
+    rc=$?
+    log_event END "$s"
+    echo >&3
+    exit "$rc"
+  ) &
   PIDS+=($!)
 done
 
@@ -73,13 +79,12 @@ for pid in "${PIDS[@]}"; do
   wait "$pid" || EXIT_CODE=1
 done
 
-kill $MONITOR_PID 2>/dev/null || true
-
-PEAK=$(cat "$PEAK_FILE")
-rm -f "$PEAK_FILE"
+# Peak concurrent depth from the lifecycle log (exact, not sampled).
+PEAK=$(awk '{ if ($1=="START") d++; else if ($1=="END") d--; if (d>m) m=d } END { print m+0 }' "$EVENT_LOG")
+rm -f "${EVENT_LOG}.lock"
 
 [ "$EXIT_CODE" -eq 0 ]                            || { echo "FAIL: at least one worker did not return APPROVE"; exit 1; }
-[ "$PEAK" -le "$CAP" ]                            || { echo "FAIL: peak concurrent containers $PEAK > cap $CAP"; exit 1; }
+[ "$PEAK" -le "$CAP" ]                            || { echo "FAIL: peak concurrent dispatches $PEAK > cap $CAP"; cat "$EVENT_LOG"; exit 1; }
 
 # Verify all 4 worktrees, branches, result files
 for s in "${SLUGS[@]}"; do
