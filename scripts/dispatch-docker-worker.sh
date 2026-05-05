@@ -45,7 +45,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-BUILD_CONTEXT="$REPO_ROOT/docker/"
+BUILD_CONTEXT="$SCRIPT_DIR/../docker/"
 cd "$REPO_ROOT"
 
 WT_DIR="$(cd "$REPO_ROOT/.." && pwd)/wt-${SLUG}"
@@ -72,7 +72,7 @@ fi
 
 if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
   echo "Building $IMAGE …"
-  docker build -t "$IMAGE" "$REPO_ROOT/docker/" >/dev/null
+  docker build -t "$IMAGE" "$BUILD_CONTEXT" >/dev/null
 fi
 
 CONTAINER_NAME="claude-worker-${SLUG}-$$"

@@ -6,6 +6,8 @@
 # Slice 2 — REPO_ROOT from `git rev-parse --show-toplevel`: invoking from a
 #   temp consumer git repo via absolute path resolves REPO_ROOT to the
 #   consumer, not the clone.
+# Slice 3 — SCRIPT_DIR for build context: BUILD_CONTEXT always points inside
+#   the clone regardless of caller CWD.
 #
 # This test is dry-run only; it does NOT require docker or
 # CLAUDE_CODE_OAUTH_TOKEN.
@@ -66,4 +68,12 @@ EXPECTED_REPO=$(git -C "$CONSUMER" rev-parse --show-toplevel)
 echo "$OUT" | grep -q "^REPO_ROOT=${EXPECTED_REPO}$" \
   || { echo "FAIL: dry-run from consumer did not print REPO_ROOT=$EXPECTED_REPO"; echo "OUTPUT:"; echo "$OUT"; exit 1; }
 
-echo "PASS: dispatch wrapper resolves REPO_ROOT from caller CWD."
+# ---------------------------------------------------------------------------
+# Slice 3 — BUILD_CONTEXT must point inside the CLONE, not the consumer.
+# ---------------------------------------------------------------------------
+echo "$OUT" | grep -q "^BUILD_CONTEXT=${REPO_ROOT}/" \
+  || { echo "FAIL: BUILD_CONTEXT from consumer did not point inside clone $REPO_ROOT"; echo "OUTPUT:"; echo "$OUT"; exit 1; }
+echo "$OUT" | grep -qv "^BUILD_CONTEXT=${EXPECTED_REPO}/" \
+  || { echo "FAIL: BUILD_CONTEXT from consumer pointed at consumer $EXPECTED_REPO"; echo "OUTPUT:"; echo "$OUT"; exit 1; }
+
+echo "PASS: dispatch wrapper resolves REPO_ROOT from caller CWD and BUILD_CONTEXT from script location."
