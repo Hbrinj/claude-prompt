@@ -71,11 +71,15 @@ branches, no in-progress checkpoint, no duplicate slugs) PLUS:
 - Resolve the wrapper path with a project-then-global fallback: prefer
   `.claude/claude-prompt/scripts/dispatch-docker-worker.sh` (project install);
   fall back to `~/.claude/claude-prompt/scripts/dispatch-docker-worker.sh`
-  (global install). Store the resolved absolute path as `$WRAPPER` for use
-  in dispatch. If neither exists → STOP (the skill is unusable without the
-  wrapper). `install.sh` only symlinks `agents/`, `skills/`, and (global)
-  `commands/` into `.claude/`; `scripts/` is not exposed under the consumer
-  repo root, so relative-path invocation does NOT work.
+  (global install). Remember the resolved path as a coordinator-level value
+  and substitute it literally into every Step 3 dispatch `command:` —
+  do NOT carry it as a shell variable, because each `Bash` tool call runs
+  in a fresh shell and shell state does not survive between calls. If
+  neither path exists → STOP (the skill is unusable without the wrapper).
+
+  > Why both paths: `install.sh` only symlinks `agents/`, `skills/`, and
+  > (global) `commands/` into `.claude/`; `scripts/` is not exposed under
+  > the consumer repo root, so relative-path invocation does NOT work.
 
 If validation fails for any feature, STOP and report exactly which checks
 failed. Do NOT dispatch a partial batch.
@@ -94,12 +98,15 @@ In ONE coordinator message, emit one `Bash` tool-use block per feature in
 the active slot. Each call uses:
 
 - `run_in_background: true` — completion lands as a notification.
-- `command`: `"$WRAPPER" <slug>` — the absolute wrapper path resolved in
-  Step 1 (project install: `.claude/claude-prompt/scripts/dispatch-docker-worker.sh`;
-  global install: `~/.claude/claude-prompt/scripts/dispatch-docker-worker.sh`).
-  Append a trailing base branch if not `main`. The wrapper resolves the
-  consumer's repo root from the caller's CWD via `git rev-parse --show-toplevel`,
-  so the coordinator must invoke it from inside the consumer git repo.
+- `command`: `<resolved-wrapper-path> <slug>` — substitute the absolute
+  path literally (NOT via a shell variable; each `Bash` tool call is a
+  fresh shell). Use whichever form Step 1 resolved:
+  `.claude/claude-prompt/scripts/dispatch-docker-worker.sh <slug>` (project
+  install) or `~/.claude/claude-prompt/scripts/dispatch-docker-worker.sh <slug>`
+  (global install). Append a trailing base branch if not `main`. The
+  wrapper resolves the consumer's repo root from the caller's CWD via
+  `git rev-parse --show-toplevel`, so the coordinator must invoke it from
+  inside the consumer git repo.
 - `description`: `"Docker worker: <slug>"`.
 - Optional env override per dispatch: `WORKER_TIMEOUT=<seconds>` for
   known-large features (default 1800 = 30 min).
