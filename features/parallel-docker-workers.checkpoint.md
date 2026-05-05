@@ -1,24 +1,28 @@
 # Checkpoint: parallel-docker-workers
 
 ## Status
-Step 2 — Implement — COMPLETE
+MERGED
 
 ## Completed steps
 - [x] Step 1 — Plan
 - [x] Step 2 — Implement
+- [x] PR opened (#17)
+- [x] PR merged (origin/main @ f812529)
 
 ## Resumption notes
-All 6 slices implemented and committed. All three reviewers (code-reviewer,
-prompt-definition-reviewer, general-reviewer) APPROVED on cycle 2 after one
-round of CRITICAL+MAJOR fixes. Awaiting user push gate before push to origin
-and PR open.
+All 6 slices implemented, all three reviewers (code-reviewer,
+prompt-definition-reviewer, general-reviewer) APPROVED on cycle 2, PR #17
+merged into main on 2026-05-05.
 
-Live verification of slices 2, 3, 5 requires the user to export
-CLAUDE_CODE_OAUTH_TOKEN and rerun:
-- scripts/test-entrypoint.sh
-- scripts/test-dispatch-single.sh
-- scripts/test-dispatch-parallel.sh
-Static + image-build + markdown-structure tests already pass.
+Live macOS run surfaced two follow-ups, logged in /TODO.md:
+- Canary fixture missing in worker worktree (worktree cut from `main`,
+  fixture lives only on the feature branch) — both dispatch tests come back
+  BLOCKED until fixed.
+- `test-dispatch-parallel.sh` 4th-worker hang (only 3 of 4 worktrees
+  materialise; parent script idles at `wait`). Masked by the fixture issue.
+
+README also gained a "Dispatch scripts — host requirements" section
+documenting `brew install coreutils flock` for macOS.
 
 ## Last updated
 2026-05-05
