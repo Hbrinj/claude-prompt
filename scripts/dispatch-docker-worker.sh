@@ -61,26 +61,32 @@ USER_FLAG=()
 if [ "$(uname -s)" = "Linux" ]; then
   # Map host uid/gid into the container so files in the bind-mounted worktree
   # are owned by the host user, not root. The unmapped uid has no /etc/passwd
-  # entry, so we also have to provide HOME and an explicit git identity, and
-  # relocate GOPATH from the Dockerfile default (/root/go) to a writable path.
+  # entry, so we also have to provide HOME and relocate GOPATH to a writable
+  # path. Git author/committer identity is set unconditionally below.
   USER_FLAG=(
     --user "$(id -u):$(id -g)"
     -e HOME=/tmp
     -e GOPATH=/tmp/go
-    -e GIT_AUTHOR_NAME=claude-worker
-    -e GIT_AUTHOR_EMAIL=claude-worker@local
-    -e GIT_COMMITTER_NAME=claude-worker
-    -e GIT_COMMITTER_EMAIL=claude-worker@local
   )
 fi
 
+# Bind-mount the host's .git at the same absolute path inside the container.
+# The worktree's .git file references <REPO_ROOT>/.git/worktrees/<slug> as an
+# absolute path; mounting that exact path makes in-container git resolve it
+# transparently, so commits land on feature/<slug> on the host repo instead of
+# the agent improvising a fresh `git init` inside /workspace.
 set +e
 timeout "$TIMEOUT_SECONDS" docker run --rm \
   --name "$CONTAINER_NAME" \
   "${USER_FLAG[@]}" \
   -v "$WT_DIR:/workspace" \
+  -v "$REPO_ROOT/.git:$REPO_ROOT/.git" \
   -e SLUG="$SLUG" \
   -e CLAUDE_CODE_OAUTH_TOKEN \
+  -e GIT_AUTHOR_NAME=claude-worker \
+  -e GIT_AUTHOR_EMAIL=claude-worker@local \
+  -e GIT_COMMITTER_NAME=claude-worker \
+  -e GIT_COMMITTER_EMAIL=claude-worker@local \
   "$IMAGE"
 EXIT_CODE=$?
 set -e
