@@ -73,7 +73,13 @@ echo "$OUT" | grep -q "^REPO_ROOT=${EXPECTED_REPO}$" \
 # ---------------------------------------------------------------------------
 echo "$OUT" | grep -q "^BUILD_CONTEXT=${REPO_ROOT}/" \
   || { echo "FAIL: BUILD_CONTEXT from consumer did not point inside clone $REPO_ROOT"; echo "OUTPUT:"; echo "$OUT"; exit 1; }
-echo "$OUT" | grep -qv "^BUILD_CONTEXT=${EXPECTED_REPO}/" \
-  || { echo "FAIL: BUILD_CONTEXT from consumer pointed at consumer $EXPECTED_REPO"; echo "OUTPUT:"; echo "$OUT"; exit 1; }
+# Negative assertion: the BUILD_CONTEXT line must NOT point at the consumer.
+# `grep -v` returns success whenever any line doesn't match (i.e. always when
+# OUT has multiple lines), so we negate a positive match instead.
+if echo "$OUT" | grep -q "^BUILD_CONTEXT=${EXPECTED_REPO}/"; then
+  echo "FAIL: BUILD_CONTEXT from consumer pointed at consumer $EXPECTED_REPO"
+  echo "OUTPUT:"; echo "$OUT"
+  exit 1
+fi
 
 echo "PASS: dispatch wrapper resolves REPO_ROOT from caller CWD and BUILD_CONTEXT from script location."
