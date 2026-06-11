@@ -1,3 +1,8 @@
+---
+name: parallel-dispatch
+description: Coordinator protocol for fanning out ≥2 features to developer agents in parallel — pre-dispatch validation, single-message fan-out with worktree isolation and background execution, concurrency cap of 3, per-feature gates in completion order, combined-diff reviewer pass after all PRs open. Use when the user names ≥2 features in a single dispatch.
+---
+
 # parallel-dispatch
 
 ## Starting state
