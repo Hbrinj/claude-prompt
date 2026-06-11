@@ -28,7 +28,7 @@ Dispatch triggers:
 - ≥2 features named in one dispatch → follow `/parallel-dispatch` (it reuses the serial flow per feature).
 - …AND the user explicitly says "in containers" / "with docker" / "dockerised" → `/parallel-docker-dispatch`. No silent mode switch.
 
-Developer-agent routing by stack: `android-developer`, `ios-developer`, `flutter-developer`, `kotlin-backend-developer`, `go-developer`, `shell-developer` (bash + the markdown prose documenting it), `react-typescript-developer`.
+Developer-agent routing by stack (full table with file paths: `## Developer-agent routing` in `skills/implement-feature.md`): `android-developer`, `ios-developer`, `flutter-developer`, `kotlin-backend-developer`, `go-developer`, `shell-developer` (bash + the markdown prose documenting it), `react-typescript-developer`.
 
 ## Pause and resume
-Every step ends by writing `features/<feature_name>.checkpoint.md` (format defined in `/implement-feature`). When the user says "resume", "continue", or "pick up where we left off": read the checkpoint file, display its state, and ask for confirmation before proceeding.
+Every step ends by writing `features/<feature_name>.checkpoint.md` (format: `## Checkpoint format` in `skills/implement-feature.md`). When the user says "resume", "continue", or "pick up where we left off": read the checkpoint file, display its state, and ask for confirmation before proceeding.

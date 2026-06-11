@@ -1,6 +1,7 @@
-# Token-efficient Claude Code configuration
+# Token-efficient config
 
 ## Context
+- This is a mixed-mode feature, intentionally carrying both `## Slices` (shell-script deliverables, TDD per slice, executed by `shell-developer`) and `## Steps` (coordinator-owned prose/config work).
 - `~/.claude/CLAUDE.md` (a manual copy of this repo's `SYSTEM_PROMPT.md`) is ~8.6KB and loads into every session in every project — the single largest recurring token cost in the user's setup. Consumer repos additionally embed the same content via `sync-upstream`, so dev sessions often pay it twice.
 - No hooks are configured: the workflow's non-negotiables ("never code on main", "never push to main") are advisory prose only.
 - Skill frontmatter across `skills/*.md` uses capitalized keys (`Name:`, `Description:`) which Claude Code does not parse — skill descriptions fall back to the first content line, breaking model-side skill discovery. `parallel-dispatch.md` has no frontmatter at all. Agent files already use correct lowercase keys.
@@ -21,12 +22,22 @@
 2. **guard-push-main.sh** — PreToolUse hook for `Bash`. Parses `tool_input.command`; denies when it contains a `git push` that targets main/master (explicit refspec, or implicit push while the cwd repo is on main/master). Allows everything else, including feature-branch pushes. Test: `scripts/test-guard-push-main.sh`.
 3. **install.sh hooks wiring** — global mode also symlinks `~/.claude/hooks` → `<clone>/scripts/hooks` via the existing `ensure_symlink`, and prints the `settings.json` hooks block for the user to apply. Test: dry-run assertion in `scripts/test-install-hooks.sh`.
 
-## Steps (coordinator-owned prose/config)
+## Steps
 1. Rewrite `SYSTEM_PROMPT.md` as the slim skeleton.
+   - Files: `SYSTEM_PROMPT.md` (UPDATE)
+   - Acceptance: file is ≤45 lines; all six non-negotiable rules present; Step 2 delegates to `/implement-feature`.
 2. Create `skills/implement-feature.md` with the relocated Step 2 procedure; add a row to `skills/README.md`.
+   - Files: `skills/implement-feature.md` (NEW), `skills/README.md` (UPDATE)
+   - Acceptance: skill contains the 8 ordered sub-steps, reviewer routing buckets, developer-agent routing table, checkpoint format, and feature-log schema equivalent to the pre-slim `SYSTEM_PROMPT.md`; README row present.
 3. Apply the frontmatter fixes and reviewer `model:` pins.
+   - Files: `skills/grill-plan.md`, `skills/sync-upstream.md`, `skills/parallel-dispatch.md`, `skills/parallel-docker-dispatch.md`, `skills/prompt-master/SKILL.md`, `agents/code-reviewer.md`, `agents/general-reviewer.md`, `agents/prompt-definition-reviewer.md`, `agents/security-reviewer.md` (UPDATE)
+   - Acceptance: every skill frontmatter uses lowercase `name:`/`description:` keys; the four reviewer agents carry `model: sonnet`.
 4. Commit the rescued `react-typescript-developer.md` + its `agents/README.md` row.
-5. After reviewer approval + push: check out this branch in `~/.claude/claude-prompt`, copy the slim `SYSTEM_PROMPT.md` → `~/.claude/CLAUDE.md`, create the `~/.claude/hooks` symlink, wire hooks into `~/.claude/settings.json`, run the permissions-mining proposal.
+   - Files: `agents/react-typescript-developer.md` (NEW), `agents/README.md` (UPDATE)
+   - Acceptance: file content matches the live-clone original byte-for-byte; README row present.
+5. After reviewer approval + push: check out this branch in `~/.claude/claude-prompt`, copy the slim `SYSTEM_PROMPT.md` → `~/.claude/CLAUDE.md`, create the `~/.claude/hooks` symlink, wire hooks into `~/.claude/settings.json`, apply the approved permission allowlist.
+   - Files: `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, `~/.claude/hooks` (symlink) — all outside this repo
+   - Acceptance: a new session loads the slim prompt; an Edit targeting a main-branch repo is denied by the hook; `git push origin main` is denied; the user-approved allowlist entries are present in settings.
 
 ## Deferred (out of scope)
 - Haiku pinning for triage-style agents — no such agents exist in this repo; the built-in Explore agent can be overridden per-call.

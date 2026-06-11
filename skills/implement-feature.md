@@ -1,7 +1,7 @@
 ---
 name: implement-feature
 version: 1.0.0
-description: Step 2 of the coordinator workflow — implements one planned feature. Use when an approved plan exists at tasks/<slug>.md and the user has approved implementation. Owns the full sub-step sequence - feature branch, developer-agent delegation with TDD slices, file-type reviewer routing gate, feature log, push, review gate, PR, CI monitoring. For ≥2 features dispatched together, use parallel-dispatch instead (it reuses this flow per feature).
+description: Step 2 of the coordinator workflow — implements one planned feature. Use when an approved plan exists at tasks/<slug>.md and the user has approved implementation. Owns the full sub-step sequence — feature branch, developer-agent delegation with TDD slices, file-type reviewer routing gate, feature log, push, review gate, PR, CI monitoring. For ≥2 features dispatched together, use parallel-dispatch instead (it reuses this flow per feature).
 ---
 
 ## Starting state
@@ -16,7 +16,7 @@ A pushed feature branch whose diff every triggered reviewer has APPROVED, a feat
 
 1. **Branch** — create `feature/<feature_name>` or `fix/<issue_name>`.
 
-2. **Code + self-review** — delegate to the developer agent matching the tech stack (routing table in the system prompt). Pass the task file (`tasks/<feature-slug>.md`) as its brief.
+2. **Code + self-review** — delegate to the developer agent matching the tech stack (see `## Developer-agent routing` below). Pass the task file (`tasks/<feature-slug>.md`) as its brief.
    - **If the plan contains `## Slices`**, the developer agent MUST execute one slice per commit, in order: write the failing test first, then the minimum implementation to pass, then the refactor. Each commit message names the slice.
    - The developer agent owns its own self-review loop per its agent prompt (`## Self-review before return`): after the last slice/commit, it invokes `code-reviewer`, applies CRITICAL+MAJOR findings, and repeats up to 3 cycles or until APPROVE before returning. The coordinator does NOT run `code-reviewer` separately in serial mode.
 
@@ -61,6 +61,42 @@ A pushed feature branch whose diff every triggered reviewer has APPROVED, a feat
 7. **PR** — open a pull request with the plan from `tasks/<feature-slug>.md` as the PR description.
 
 8. **Pipeline** — monitor CI until it passes; if any check fails, read the failure, fix the root cause, push again, re-monitor; NEVER skip or bypass failing checks.
+
+## Developer-agent routing
+
+| Stack | Agent |
+|-------|-------|
+| Android/Kotlin mobile | `agents/android-developer.md` |
+| iOS/Swift | `agents/ios-developer.md` |
+| Flutter/Dart | `agents/flutter-developer.md` |
+| Kotlin backend/AWS | `agents/kotlin-backend-developer.md` |
+| Go (CLI tools, services, libraries) | `agents/go-developer.md` |
+| Bash/shell scripts + the adjacent markdown prose documenting them | `agents/shell-developer.md` |
+| React + TypeScript web (SPA, components, hooks, client-side logic) | `agents/react-typescript-developer.md` |
+
+Supporting agents and skills: `agents/code-reviewer.md` (invoked by the developer agent's self-review loop, and by `parallel-dispatch` for the combined-diff pass), `agents/prompt-definition-reviewer.md` and `agents/general-reviewer.md` (invoked by the routing gate in step 3), `agents/architecture.md` (Step 1, on architectural impact), `agents/issue-liaison.md` (issue-driven work), `agents/security-reviewer.md` (on demand), `skills/grill-plan.md` (Step 1), `skills/parallel-dispatch.md` / `skills/parallel-docker-dispatch.md` (≥2-feature dispatches).
+
+## Allowed actions
+
+- Create and switch to the feature branch; commit on it.
+- Dispatch developer and reviewer agents and read their reports.
+- Edit `features/all_features.md` and `features/<feature_name>.checkpoint.md`; apply reviewer CRITICAL+MAJOR findings to files in the diff.
+- Push the feature branch to origin; open the PR after explicit user approval; monitor CI.
+
+## Forbidden actions
+
+- NEVER push to main/master.
+- NEVER push any branch before every reviewer triggered by the diff has returned APPROVE.
+- NEVER open a PR without passing tests, or before the user approves at the review gate (step 6).
+- NEVER write implementation code directly — delegate to the matching developer agent.
+- NEVER stage or commit files unrelated to this feature.
+
+## Stop and ask before
+
+- Proceeding when no developer agent matches the tech stack.
+- Continuing past a reviewer loop that still returns REQUEST CHANGES after 3 cycles.
+- Any destructive git operation (rebase, force-push, history rewrite).
+- Opening the PR — the step 6 review gate is mandatory.
 
 ## Checkpoint format
 
