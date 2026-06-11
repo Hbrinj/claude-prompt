@@ -15,18 +15,18 @@ agents/
 skills/
 ├── README.md         # Skills catalogue and usage notes
 └── *.md              # Individual skill definitions
-SYSTEM_PROMPT.md      # Coordinator workflow — source of truth (committed)
+SYSTEM_PROMPT.md      # Coordinator workflow skeleton — source of truth with skills/implement-feature.md (committed)
 CLAUDE.md             # Repo conventions for Claude when working in this repo
 ```
 
 ## Workflow source of truth
 
-`SYSTEM_PROMPT.md` is the **canonical, version-controlled** coordinator workflow (Step 1 → Plan, Step 2 → Implement, non-negotiable rules, Skill index, Agent index). Two derived copies exist downstream:
+The **canonical, version-controlled** coordinator workflow is split across two files: `SYSTEM_PROMPT.md` (always-loaded skeleton — role, non-negotiable rules, Step 1 → Plan / Step 2 → Implement outline, dispatch triggers) and `skills/implement-feature.md` (Step 2 procedure, agent/skill routing index, checkpoint format, feature-log schema — loaded on demand). Two derived copies of `SYSTEM_PROMPT.md` exist downstream:
 
 - **Consumer repos' `CLAUDE.md`** — kept in sync automatically by the `sync-upstream` skill (`skills/sync-upstream.md`), which writes the latest `SYSTEM_PROMPT.md` content into a guarded block bounded by `<!-- SYSTEM_PROMPT:START -->` / `<!-- SYSTEM_PROMPT:END -->` markers. Anything in the consumer repo's `CLAUDE.md` outside those markers is preserved.
 - **Your `~/.claude/CLAUDE.md`** — Claude Code's global instructions file. Kept in sync **manually** — `sync-upstream` does NOT touch it. After editing `SYSTEM_PROMPT.md`, copy the new content into `~/.claude/CLAUDE.md` yourself if you want the active session and other "raw" sessions (no sync-upstream installed) to pick up the change immediately.
 
-> **When changing the coordinator workflow, ALWAYS edit `SYSTEM_PROMPT.md` in this repo — NEVER edit a derived copy (`~/.claude/CLAUDE.md` or any consumer repo's `CLAUDE.md`) directly.**
+> **When changing the coordinator workflow, ALWAYS edit `SYSTEM_PROMPT.md` and/or `skills/implement-feature.md` in this repo — NEVER edit a derived copy (`~/.claude/CLAUDE.md` or any consumer repo's `CLAUDE.md`) directly.**
 >
 > Editing a derived copy alone is upside-down: the change is not version-controlled, is not shared with other machines or users, and is silently overwritten the next time `sync-upstream` runs in that consumer repo. The fix is one-way: edit `SYSTEM_PROMPT.md` here, commit, then propagate (sync-upstream for consumer repos, manual copy for `~/.claude/CLAUDE.md`).
 >

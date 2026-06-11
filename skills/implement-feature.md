@@ -100,7 +100,7 @@ Supporting agents and skills: `agents/code-reviewer.md` (invoked by the develope
 
 ## Checkpoint format
 
-Every step (including Step 1 — Plan) ends by writing a checkpoint to `features/<feature_name>.checkpoint.md`:
+This skill writes a checkpoint at the end of Step 2 (Implement). The same format is used by the coordinator for the Step 1 — Plan checkpoint; it is defined here as the canonical reference:
 
 ```
 # Checkpoint: <feature_name>
