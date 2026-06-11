@@ -119,4 +119,14 @@ assert_allow "empty stdin fails open" ""
 assert_allow "missing tool_input.file_path fails open" \
   '{"tool_name":"Edit","tool_input":{}}'
 
+# ── Fail open: hook deployed without its sibling lib.sh ─────────────────────
+mkdir -p "$TMP/lonely"
+cp "$HOOK" "$TMP/lonely/"
+if ! out="$(printf '%s' "$(hook_json Edit file_path "$TMP/repo-main/a.md")" \
+  | HOME="$FAKE_HOME" bash "$TMP/lonely/guard-main-edit.sh")"; then
+  echo "FAIL: missing lib.sh — hook exited nonzero"; exit 1
+fi
+[ -z "$out" ] || { echo "FAIL: missing lib.sh — expected allow, got: $out"; exit 1; }
+echo "  ok: missing sibling lib.sh fails open (allowed)"
+
 echo "PASS: guard-main-edit.sh — all cases behaved as expected."

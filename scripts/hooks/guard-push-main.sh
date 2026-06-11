@@ -31,28 +31,20 @@
 # Allows everything else, and fails open on missing jq, malformed stdin JSON,
 # or a cwd that is not a git repo.
 #
-# Dependencies: jq, git.
+# Dependencies: jq, git, sibling lib.sh (allow/deny/read_hook_input).
 set -euo pipefail
 
 DENY_REASON="Pushing to main/master is blocked — the user merges to main manually. Push a feature branch instead."
 
-allow() { exit 0; }
+# Shared allow/deny/read_hook_input live next to this script; a missing lib
+# fails open (a broken hook must never brick the harness).
+HOOK_LIB="$(dirname "$0")/lib.sh"
+[[ -f "$HOOK_LIB" ]] || exit 0
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=lib.sh
+. "$HOOK_LIB"
 
-deny() {
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' \
-    "$DENY_REASON"
-  exit 0
-}
-
-# A broken hook must never brick the harness: no jq → allow.
-command -v jq >/dev/null 2>&1 || allow
-
-input="$(cat || true)"
-
-# Malformed JSON → allow.
-if ! tool_name="$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)"; then
-  allow
-fi
+read_hook_input
 [[ "$tool_name" == "Bash" ]] || allow
 
 command_str="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"

@@ -19,28 +19,20 @@
 # (one path prefix per line; leading `~`, `$HOME`, or `${HOME}` expanded;
 # blank lines and `#` comments ignored; the file may not exist).
 #
-# Dependencies: jq, git.
+# Dependencies: jq, git, sibling lib.sh (allow/deny/read_hook_input).
 set -euo pipefail
 
 DENY_REASON="On main/master — create a feature branch first"
 
-allow() { exit 0; }
+# Shared allow/deny/read_hook_input live next to this script; a missing lib
+# fails open (a broken hook must never brick the harness).
+HOOK_LIB="$(dirname "$0")/lib.sh"
+[[ -f "$HOOK_LIB" ]] || exit 0
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=lib.sh
+. "$HOOK_LIB"
 
-deny() {
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' \
-    "$DENY_REASON"
-  exit 0
-}
-
-# A broken hook must never brick the harness: no jq → allow.
-command -v jq >/dev/null 2>&1 || allow
-
-input="$(cat || true)"
-
-# Malformed JSON → allow.
-if ! tool_name="$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)"; then
-  allow
-fi
+read_hook_input
 
 case "$tool_name" in
   Edit|Write)   path_filter='.tool_input.file_path // empty' ;;

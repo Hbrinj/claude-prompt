@@ -20,11 +20,16 @@ a full shell parser is out of scope, and a false deny costs a reword while a
 false allow costs a push to main. Reword the string (or run the command
 outside the harness) to proceed.
 
+Both guards source their shared allow/deny/stdin-parsing helpers from the
+sibling `lib.sh`, located via `$(dirname "$0")` — deploy the directory as a
+whole (the installer symlinks it as a whole), not individual scripts.
+
 ## Fail open
 
 A broken hook must never brick the harness. Both guards **allow** when:
 
 - `jq` is not installed, or stdin is not valid JSON
+- the sibling `lib.sh` is missing next to the guard script
 - the target path is not inside a git repo, or the repo is on a detached HEAD
 - the tool is not one the guard inspects
 
