@@ -30,7 +30,7 @@ The **canonical, version-controlled** coordinator workflow is split across two f
 >
 > Editing a derived copy alone is upside-down: the change is not version-controlled, is not shared with other machines or users, and is silently overwritten the next time `sync-upstream` runs in that consumer repo. The fix is one-way: edit `SYSTEM_PROMPT.md` here, commit, then propagate (sync-upstream for consumer repos, manual copy for `~/.claude/CLAUDE.md`).
 >
-> If you're unsure whether a change belongs in `SYSTEM_PROMPT.md` or somewhere else, default to `SYSTEM_PROMPT.md` — it's the workflow's source of truth and the safer place for any coordinator-shaped change.
+> If you're unsure where a coordinator-shaped change belongs, default to the source-of-truth pair: `SYSTEM_PROMPT.md` for skeleton/rules changes, `skills/implement-feature.md` for Step 2 procedure changes.
 
 The same source-of-truth rule applies to `agents/*.md` and `skills/*.md` — the repo is the source; `~/.claude/agents` and `~/.claude/commands` are derived (typically symlinked by `sync-upstream`, see [Usage](#usage)).
 
