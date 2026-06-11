@@ -14,8 +14,10 @@
 #     `git push origin feature/x:main`, with or without flags (--force/-f/-u/…);
 #     refspec destinations are matched as whole segments (refs/heads/ tolerated),
 #     so feature/main-page and domain-fix are NOT denied
-#   - quote characters are stripped before matching, so `git push origin "main"`
-#     and shell wrappers like `sh -c 'git push origin main'` are denied too
+#   - quote and backslash characters are stripped before matching, so
+#     `git push origin "main"`, `git push origin ma\in`, `\git push origin
+#     main`, and shell wrappers like `sh -c 'git push origin main'` are
+#     denied too
 #   - `--all`, `--mirror`, and `--branches` pushes (they push every branch,
 #     main/master included) — denied regardless of the current branch
 #   - implicit pushes (`git push`, `git push origin`, `git push --force`) while
@@ -75,14 +77,16 @@ segment_denies() {
   local -a raw=() words=()
   read -ra raw <<< "$1" || true
 
-  # Strip quote characters from every token so quoting cannot dodge the match:
-  # `git push origin "main"` and `sh -c 'git push origin main'` tokenize to
-  # the same words as their unquoted forms. Tokens that were only quotes are
+  # Strip quote and backslash characters from every token so shell escaping
+  # cannot dodge the match: `git push origin "main"`, `sh -c 'git push origin
+  # main'`, `git push origin ma\in`, and `\git push origin main` all tokenize
+  # to the same words as their plain forms. Tokens that were only quotes are
   # dropped.
   local k w
   for (( k = 0; k < ${#raw[@]}; k++ )); do
     w="${raw[k]//\"/}"
     w="${w//\'/}"
+    w="${w//\\/}"
     if [[ -n "$w" ]]; then
       words+=("$w")
     fi

@@ -4,9 +4,10 @@
 # Denies Bash commands containing a `git push` that targets main/master:
 # explicit destinations (refspecs, with or without flags) and implicit pushes
 # (`git push`, `git push origin`, `git push --force`) while the cwd repo is on
-# main/master. Quote characters cannot dodge the match (`git push origin
-# "main"`), shell wrappers are seen through (`sh -c 'git push origin main'`),
-# and `--all`/`--mirror`/`--branches` pushes are denied outright. Allows
+# main/master. Quotes and backslashes cannot dodge the match (`git push origin
+# "main"`, `git push origin ma\in`, `\git push origin main`), shell wrappers
+# are seen through (`sh -c 'git push origin main'`), and
+# `--all`/`--mirror`/`--branches` pushes are denied outright. Allows
 # everything else — non-push commands, feature-branch destinations, and branch
 # names that merely contain "main" as a substring.
 # Compound commands (&&, ;, ||): any denied segment denies the whole command.
@@ -93,6 +94,12 @@ assert_deny "git push origin 'master' (single-quoted)" \
   "$(bash_json "git push origin 'master'" "$FEAT")"
 assert_deny 'git push origin HEAD:"main" (quoted destination)' \
   "$(bash_json 'git push origin HEAD:"main"' "$FEAT")"
+
+# ── Deny: backslash escapes (the shell resolves them, so must we) ───────────
+assert_deny 'git push origin ma\in (escaped refspec)' \
+  "$(bash_json 'git push origin ma\in' "$FEAT")"
+assert_deny '\git push origin main (escaped command name)' \
+  "$(bash_json '\git push origin main' "$FEAT")"
 
 # ── Deny: shell wrappers (sh/bash/zsh -c) ───────────────────────────────────
 assert_deny "sh -c 'git push origin main'" \
