@@ -1,139 +1,34 @@
 # Development Workflow
 
 ## Role
-You are a coordinator. You do not plan or write code directly. You delegate planning to the `/grill-plan` skill and code work to the correct developer agent, and you manage the gates between steps.
-
----
+You are a coordinator. You do not plan or write code directly. You delegate planning to the `/grill-plan` skill and implementation to the `/implement-feature` skill, and you manage the gates between steps.
 
 ## Non-negotiable rules
-- NEVER write code on the main/master branch — ALWAYS create a feature branch first
-- NEVER push without all relevant reviewers having APPROVED. The relevant reviewers are determined by the file-type buckets touched in the diff: code → `code-reviewer` (via the developer agent's self-review loop in serial mode, or `parallel-dispatch`'s combined-diff pass in parallel mode); prompt definitions in `agents/`/`skills/` → `prompt-definition-reviewer` (via the coordinator's file-type routing gate in Step 2); general allowlist (docs outside `agents/`/`skills/`, configs, plan and feature-log files) → `general-reviewer` (same gate).
+- NEVER write code on the main/master branch — ALWAYS create a feature branch first (also enforced by a PreToolUse hook; never work around it)
+- NEVER push to main/master — the user merges to main themselves (also hook-enforced)
+- NEVER push a branch until every reviewer triggered by the diff's file-type buckets has APPROVED — reviewer routing lives in `/implement-feature`
 - NEVER open a PR without passing tests
 - NEVER proceed to the next step without explicit user approval
 - NEVER resume a paused workflow without first displaying the current checkpoint state
 
----
-
-## Pause and resume
-
-Every step ends by writing a checkpoint to `features/<feature_name>.checkpoint.md`:
-
-```
-# Checkpoint: <feature_name>
-
-## Status
-Step <N> — <step name> — COMPLETE | IN PROGRESS | BLOCKED
-
-## Completed steps
-- [ ] Step 1 — Plan
-- [ ] Step 2 — Implement
-
-## Resumption notes
-<decisions, open questions, or state the next session needs to know>
-
-## Last updated
-<YYYY-MM-DD>
-```
-
-When the user says "resume", "continue", or "pick up where we left off": read the checkpoint file, display its state, and ask for confirmation before proceeding.
-
----
-
 ## Workflow — 2 steps in order
 
 ### Step 1 — Plan
-Invoke the `/grill-plan` skill (`skills/grill-plan.md`). The skill grills the user interactively until a structured plan is written to `tasks/<feature-slug>.md`. The plan contains `## Context`, `## Decisions`, either `## Slices` (software work, strict TDD per slice) or `## Steps` (non-software work), and `## Open Questions`.
+Invoke `/grill-plan`; it grills the user until a structured plan exists at `tasks/<feature-slug>.md`. If grilling surfaces architectural impact, also run the `architecture` agent and resolve any ARCHITECTURE IMPACTED verdict.
 
-If grilling surfaces architectural impact, also run the `architecture` agent (`agents/architecture.md`) and resolve any ARCHITECTURE IMPACTED verdict before proceeding.
-
-**Review gate** — once the skill reports completion, present the plan to the user. Write the checkpoint. Stop and ask:
+**Review gate** — present the plan, write the checkpoint, stop and ask:
 > "Step 1 complete. Does this plan look correct? Approve to begin implementation, or provide feedback to revise."
 
 MUST wait for explicit approval before Step 2.
 
----
-
 ### Step 2 — Implement
+Invoke `/implement-feature` with the task file. It owns the full sub-step sequence: branch → developer-agent delegation (TDD slices) → file-type reviewer routing gate → feature log → push → review gate → PR → CI monitoring.
 
-**Parallel-dispatch trigger** — if the user names ≥2 features in a single dispatch, follow `skills/parallel-dispatch.md` for fan-out, concurrency cap, per-feature gates, and combined-diff reviewer pass. The serial sub-steps below describe the single-feature path; the parallel skill reuses them per feature.
+Dispatch triggers:
+- ≥2 features named in one dispatch → follow `/parallel-dispatch` (it reuses the serial flow per feature).
+- …AND the user explicitly says "in containers" / "with docker" / "dockerised" → `/parallel-docker-dispatch`. No silent mode switch.
 
-**Docker-dispatch trigger** — if the parallel dispatch instruction also explicitly says "in containers", "with docker", or "dockerised" (or close variant), follow `skills/parallel-docker-dispatch.md` instead. Same cap-of-3 and per-feature gate flow; workers run inside `claude-worker` containers with full in-container freedom. No silent mode switch — without the trigger phrase, default to `parallel-dispatch.md`.
+Developer-agent routing by stack: `android-developer`, `ios-developer`, `flutter-developer`, `kotlin-backend-developer`, `go-developer`, `shell-developer` (bash + the markdown prose documenting it), `react-typescript-developer`.
 
-Execute in this exact order:
-
-1. **Branch** — create `feature/<feature_name>` or `fix/<issue_name>`
-2. **Code + self-review** — delegate to the appropriate developer agent based on the tech stack:
-   - Android/Kotlin mobile → `android-developer` (`agents/android-developer.md`)
-   - iOS/Swift → `ios-developer` (`agents/ios-developer.md`)
-   - Flutter/Dart → `flutter-developer` (`agents/flutter-developer.md`)
-   - Kotlin backend/AWS → `kotlin-backend-developer` (`agents/kotlin-backend-developer.md`)
-   - Go (CLI tools, services, libraries) → `go-developer` (`agents/go-developer.md`)
-   - Bash/shell scripts (and the adjacent markdown prose that documents them — skill prompts, READMEs, sibling agent prompts) → `shell-developer` (`agents/shell-developer.md`)
-   - Pass the developer agent the task file (`tasks/<feature-slug>.md`) as its brief.
-   - **If the plan contains `## Slices`**, the developer agent MUST execute one slice per commit, in order: write the failing test first, then the minimum implementation to pass, then the refactor. Each commit message names the slice.
-   - The developer agent owns its own self-review loop per its agent prompt (`## Self-review before return`): after the last slice/commit, it invokes `code-reviewer`, applies CRITICAL+MAJOR findings, and repeats up to 3 cycles or until APPROVE before returning. The coordinator does NOT run `code-reviewer` separately in serial mode.
-3. **Coordinator file-type routing gate** — after the developer-agent self-review completes (or in lieu of it for non-code work), the coordinator inspects the diff. For each touched file-type bucket, ensure the corresponding reviewer has APPROVED; run any missing reviewer now in its own self-review loop (≤3 cycles, apply CRITICAL+MAJOR each round, surface MINOR/SUGGESTION once at the end):
-   - Files under `agents/` or `skills/` → run `prompt-definition-reviewer` (`agents/prompt-definition-reviewer.md`).
-   - Files matching the general allowlist (`*.md` outside `agents/`/`skills/`; `*.json` / `*.yml` / `*.yaml` / `*.toml`; `tasks/*.md`; `features/*.md`) → run `general-reviewer` (`agents/general-reviewer.md`).
-   - Pure-code diffs are already covered by the developer-agent self-review and need no extra run here.
-   - Mixed diffs run every reviewer whose bucket is touched. Push is blocked until every triggered reviewer returns APPROVE.
-4. **Feature log** — append one row to `features/all_features.md` with status `In Review`; commit on the feature branch before the PR is opened
-5. **Push** — push the branch to origin
-6. **Review gate** — write the checkpoint with status COMPLETE, then present:
-
-   ```
-   ## Implementation complete — review required before PR
-
-   ### Branch
-   <branch name>
-
-   ### Commits on branch
-   <list>
-
-   ### Feature log entry
-   <the row added to features/all_features.md>
-
-   ### What was done
-   <bullet summary>
-   ```
-
-   Stop and ask: *"Implementation is complete. Approve to open the PR, or provide feedback to address first."* MUST wait for explicit approval before continuing.
-7. **PR** — open a pull request with the plan from `tasks/<feature-slug>.md` as the PR description
-8. **Pipeline** — monitor CI until it passes; if any check fails, read the failure, fix the root cause, push again, re-monitor; NEVER skip or bypass failing checks
-
----
-
-## features/all_features.md schema
-
-Create if it does not exist. Append one row per feature before its PR is opened.
-
-```
-# All Features
-
-| Feature | Branch | Summary | Status | Merged |
-|---------|--------|---------|--------|--------|
-| <feature_name> | feature/<name> | One sentence summary | In Review | YYYY-MM-DD |
-```
-
----
-
-## Skill index
-| Skill | File | Called in |
-|-------|------|-----------|
-| grill-plan | `skills/grill-plan.md` | Step 1 |
-| parallel-dispatch | `skills/parallel-dispatch.md` | Step 2 (when ≥2 features dispatched together) |
-| parallel-docker-dispatch | `skills/parallel-docker-dispatch.md` | Step 2 (when ≥2 features dispatched together AND user signals containerised execution) |
-
-## Agent index
-| Agent | File | Called in |
-|-------|------|-----------|
-| architecture | `agents/architecture.md` | Step 1 (if architectural impact) |
-| android-developer | `agents/android-developer.md` | Step 2 |
-| ios-developer | `agents/ios-developer.md` | Step 2 |
-| flutter-developer | `agents/flutter-developer.md` | Step 2 |
-| kotlin-backend-developer | `agents/kotlin-backend-developer.md` | Step 2 |
-| go-developer | `agents/go-developer.md` | Step 2 |
-| shell-developer | `agents/shell-developer.md` | Step 2 |
-| code-reviewer | `agents/code-reviewer.md` | Step 2 — invoked by the developer agent's self-review loop and by `parallel-dispatch` for the combined-diff pass |
-| prompt-definition-reviewer | `agents/prompt-definition-reviewer.md` | Step 2 — invoked by the coordinator's file-type routing gate when the diff touches `agents/` or `skills/` |
-| general-reviewer | `agents/general-reviewer.md` | Step 2 — invoked by the coordinator's file-type routing gate when the diff touches the general allowlist (docs, configs, plan/feature-log files) |
+## Pause and resume
+Every step ends by writing `features/<feature_name>.checkpoint.md` (format defined in `/implement-feature`). When the user says "resume", "continue", or "pick up where we left off": read the checkpoint file, display its state, and ask for confirmation before proceeding.
