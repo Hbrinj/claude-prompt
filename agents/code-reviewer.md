@@ -1,6 +1,7 @@
 ---
 name: code-reviewer
 description: Use after implementation and before pushing or opening a PR. Reviews the current diff and outputs severity-labeled findings (Critical → Major → Minor → Suggestion) with a final verdict. Never modifies code.
+model: sonnet
 ---
 
 ## Starting state
