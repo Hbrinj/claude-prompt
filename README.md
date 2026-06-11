@@ -154,6 +154,10 @@ Without these, you will see `timeout: command not found` and `flock: command not
 
 The wrapper resolves the consumer's repo root from the caller's CWD via `git rev-parse --show-toplevel`, so always invoke it from inside the consumer git repo. A `--dry-run` flag prints the resolved `REPO_ROOT`, `SCRIPT_DIR`, `BUILD_CONTEXT`, `WT_DIR`, and `BRANCH` and exits without touching docker — useful for sanity-checking the path resolution.
 
+## Guard hooks
+
+`scripts/hooks/` contains PreToolUse hooks that mechanically enforce two workflow non-negotiables: `guard-main-edit.sh` denies Edit/Write/NotebookEdit while the target's repo is on main/master, and `guard-push-main.sh` denies `git push` to main/master. `install.sh --global` symlinks `~/.claude/hooks` → `<clone>/scripts/hooks` and prints the `settings.json` block to add manually (it never edits `settings.json`). Both hooks require `jq` (preinstalled on recent macOS; otherwise `brew install jq`) and fail open when `jq` is missing or stdin is malformed. Per-path opt-outs for the edit guard live in `~/.claude/hooks-exceptions`. Full contract: [`scripts/hooks/README.md`](scripts/hooks/README.md).
+
 ## Contributing
 
 - Keep each agent and skill focused on a single responsibility.
