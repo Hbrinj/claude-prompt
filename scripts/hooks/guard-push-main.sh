@@ -14,10 +14,19 @@
 #     `git push origin feature/x:main`, with or without flags (--force/-f/-u/…);
 #     refspec destinations are matched as whole segments (refs/heads/ tolerated),
 #     so feature/main-page and domain-fix are NOT denied
+#   - quote characters are stripped before matching, so `git push origin "main"`
+#     and shell wrappers like `sh -c 'git push origin main'` are denied too
+#   - `--all`, `--mirror`, and `--branches` pushes (they push every branch,
+#     main/master included) — denied regardless of the current branch
 #   - implicit pushes (`git push`, `git push origin`, `git push --force`) while
 #     the repo at the session cwd (or at a `git -C <dir>` override) is on
 #     main/master
 #   - compound commands (&&, ;, ||, |, newlines): any denied segment denies all
+#
+# Accepted safe-direction tradeoff: segment splitting and tokenization ignore
+# shell quoting, so a quoted string that merely MENTIONS a bad push (e.g.
+# `git commit -m 'x && git push origin main y'`) is denied as a false
+# positive. This errs toward blocking; a full shell parser is out of scope.
 #
 # Allows everything else, and fails open on missing jq, malformed stdin JSON,
 # or a cwd that is not a git repo.
@@ -71,8 +80,22 @@ on_protected_branch() {
 # segment_denies <segment> — true when the segment is a `git push` that
 # targets main/master.
 segment_denies() {
-  local -a words=()
-  read -ra words <<< "$1" || true
+  local -a raw=() words=()
+  read -ra raw <<< "$1" || true
+
+  # Strip quote characters from every token so quoting cannot dodge the match:
+  # `git push origin "main"` and `sh -c 'git push origin main'` tokenize to
+  # the same words as their unquoted forms. Tokens that were only quotes are
+  # dropped.
+  local k w
+  for (( k = 0; k < ${#raw[@]}; k++ )); do
+    w="${raw[k]//\"/}"
+    w="${w//\'/}"
+    if [[ -n "$w" ]]; then
+      words+=("$w")
+    fi
+  done
+
   local n=${#words[@]} i=0 tok git_dir=""
 
   # Locate the `git` token (path-qualified invocations and a leading
@@ -113,6 +136,9 @@ segment_denies() {
   while (( i < n )); do
     tok="${words[i]}"
     case "$tok" in
+      --all|--mirror|--branches)
+        # Pushes every branch — main/master included — deny outright.
+        return 0 ;;
       -o|--push-option|--repo|--receive-pack|--exec)
         i=$((i + 2)) ;;
       --)

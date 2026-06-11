@@ -8,7 +8,17 @@ with no output to allow.
 | Script | Matcher | What it blocks |
 |--------|---------|----------------|
 | `guard-main-edit.sh` | `Edit\|Write\|NotebookEdit` | Editing/creating files while the target file's git repo is on `main`/`master`. Write targets that don't exist yet are handled by walking up the dirname chain to the nearest existing directory. Deny reason: "On main/master — create a feature branch first". |
-| `guard-push-main.sh` | `Bash` | Any `git push` targeting `main`/`master`: explicit destinations (`git push origin main`, `git push origin HEAD:main`, `git push origin feature/x:main`, with or without flags) and implicit pushes (`git push`, `git push origin`, `git push --force`) while the session cwd's repo (or a `git -C <dir>` override) is on main/master. Compound commands (`&&`, `;`, `\|\|`, `\|`, newlines) are denied if any segment is a denied push. Refspec destinations are matched as whole segments — `feature/main-page` and `domain-fix` are not denied. |
+| `guard-push-main.sh` | `Bash` | Any `git push` targeting `main`/`master`: explicit destinations (`git push origin main`, `git push origin HEAD:main`, `git push origin feature/x:main`, with or without flags) and implicit pushes (`git push`, `git push origin`, `git push --force`) while the session cwd's repo (or a `git -C <dir>` override) is on main/master. Quote characters are stripped before matching, so `git push origin "main"` and shell wrappers like `sh -c 'git push origin main'` (or `bash -c`/`zsh -c`) are denied too. `git push --all`, `--mirror`, and `--branches` are denied outright regardless of the current branch — they push every branch, main included. Compound commands (`&&`, `;`, `\|\|`, `\|`, newlines) are denied if any segment is a denied push. Refspec destinations are matched as whole segments — `feature/main-page` and `domain-fix` are not denied. |
+
+### Accepted tradeoff — quote-blind segment splitting
+
+`guard-push-main.sh` splits compound commands and tokenizes without parsing
+shell quoting, and errs toward blocking. A quoted string that merely
+*mentions* a bad push — e.g. `git commit -m 'x && git push origin main y'` —
+is denied as a false positive. This is a deliberate safe-direction tradeoff:
+a full shell parser is out of scope, and a false deny costs a reword while a
+false allow costs a push to main. Reword the string (or run the command
+outside the harness) to proceed.
 
 ## Fail open
 

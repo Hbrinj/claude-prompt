@@ -4,8 +4,11 @@
 # Denies Bash commands containing a `git push` that targets main/master:
 # explicit destinations (refspecs, with or without flags) and implicit pushes
 # (`git push`, `git push origin`, `git push --force`) while the cwd repo is on
-# main/master. Allows everything else — non-push commands, feature-branch
-# destinations, and branch names that merely contain "main" as a substring.
+# main/master. Quote characters cannot dodge the match (`git push origin
+# "main"`), shell wrappers are seen through (`sh -c 'git push origin main'`),
+# and `--all`/`--mirror`/`--branches` pushes are denied outright. Allows
+# everything else — non-push commands, feature-branch destinations, and branch
+# names that merely contain "main" as a substring.
 # Compound commands (&&, ;, ||): any denied segment denies the whole command.
 #
 # Requires: jq, git.
@@ -83,6 +86,32 @@ assert_deny "git push -f origin HEAD:master" \
 assert_deny "git push origin refs/heads/main" \
   "$(bash_json 'git push origin refs/heads/main' "$FEAT")"
 
+# ── Deny: quoted refspecs (quotes must not dodge the match) ─────────────────
+assert_deny 'git push origin "main" (double-quoted)' \
+  "$(bash_json 'git push origin "main"' "$FEAT")"
+assert_deny "git push origin 'master' (single-quoted)" \
+  "$(bash_json "git push origin 'master'" "$FEAT")"
+assert_deny 'git push origin HEAD:"main" (quoted destination)' \
+  "$(bash_json 'git push origin HEAD:"main"' "$FEAT")"
+
+# ── Deny: shell wrappers (sh/bash/zsh -c) ───────────────────────────────────
+assert_deny "sh -c 'git push origin main'" \
+  "$(bash_json "sh -c 'git push origin main'" "$FEAT")"
+assert_deny 'bash -c "git push origin main"' \
+  "$(bash_json 'bash -c "git push origin main"' "$FEAT")"
+assert_deny "zsh -c 'git push origin master'" \
+  "$(bash_json "zsh -c 'git push origin master'" "$FEAT")"
+
+# ── Deny: --all / --mirror / --branches push every branch, main included ────
+assert_deny "git push --all origin (on a feature branch)" \
+  "$(bash_json 'git push --all origin' "$FEAT")"
+assert_deny "git push --mirror origin (on a feature branch)" \
+  "$(bash_json 'git push --mirror origin' "$FEAT")"
+assert_deny "git push --branches origin (on a feature branch)" \
+  "$(bash_json 'git push --branches origin' "$FEAT")"
+assert_deny "bare git push --all (on a feature branch)" \
+  "$(bash_json 'git push --all' "$FEAT")"
+
 # ── Deny: implicit pushes while the cwd repo is on main/master ──────────────
 assert_deny "bare git push on main" \
   "$(bash_json 'git push' "$MAIN")"
@@ -110,6 +139,14 @@ assert_allow "git push --force-with-lease origin feature/x" \
   "$(bash_json 'git push --force-with-lease origin feature/x' "$MAIN")"
 assert_allow "push local main to a feature branch" \
   "$(bash_json 'git push origin main:feature/backport' "$MAIN")"
+
+# ── Allow: quoted/wrapped pushes to feature branches stay allowed ───────────
+assert_allow 'git push origin "feature/x" (quoted feature ref)' \
+  "$(bash_json 'git push origin "feature/x"' "$MAIN")"
+assert_allow "sh -c 'git push origin feature/x'" \
+  "$(bash_json "sh -c 'git push origin feature/x'" "$MAIN")"
+assert_allow "sh -c 'git status' (wrapped non-push)" \
+  "$(bash_json "sh -c 'git status'" "$MAIN")"
 
 # ── Allow: "main"/"master" as substring, not whole refspec segment ──────────
 assert_allow "git push origin feature/main-page" \
