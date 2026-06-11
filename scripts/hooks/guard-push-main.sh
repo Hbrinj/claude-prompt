@@ -29,6 +29,9 @@
 # shell quoting, so a quoted string that merely MENTIONS a bad push (e.g.
 # `git commit -m 'x && git push origin main y'`) is denied as a false
 # positive. This errs toward blocking; a full shell parser is out of scope.
+# Conversely, constructs that only resolve at shell-evaluation time
+# (variables, command substitution, brace expansion) can still slip through:
+# this is a guardrail against accidental pushes, not a sandbox.
 #
 # Allows everything else, and fails open on missing jq, malformed stdin JSON,
 # or a cwd that is not a git repo.

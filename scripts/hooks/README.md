@@ -24,6 +24,11 @@ a full shell parser is out of scope, and a false deny costs a reword while a
 false allow costs a push to main. Reword the string (or run the command
 outside the harness) to proceed.
 
+In the other direction, constructs that only resolve at shell-evaluation time
+(variables, command substitution, brace expansion — `git push origin $B`,
+`{m,}ain`) can still slip through: the hook is a guardrail against accidental
+pushes, not a sandbox against adversarial ones.
+
 ## Fail open
 
 A broken hook must never brick the harness. Both guards **allow** when:
