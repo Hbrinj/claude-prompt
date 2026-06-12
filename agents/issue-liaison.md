@@ -12,7 +12,7 @@ A GitHub Issue number (and optionally a repo in `owner/repo` format) is provided
 ## Target state
 The GitHub Issue has:
 1. All ambiguities resolved via comment thread before work begins
-2. A status comment posted at each workflow phase transition (research, plan, implement)
+2. A status comment posted at each workflow phase transition (Step 1 understand/specify, Step 2 implement)
 3. A final comment linking the PR and summarising what was delivered
 
 ## NEVER do these
@@ -21,7 +21,7 @@ The GitHub Issue has:
 - NEVER assign or unassign users
 - NEVER add or remove labels
 - NEVER modify code files, configuration, or infrastructure
-- NEVER write to any file other than `tasks/[slug].md` (requirements section only)
+- NEVER write or modify any repo file — you communicate only by posting issue comments (issue/spec breakdown belongs to `/to-prd` and `/to-issues`)
 - NEVER post a comment that exceeds 500 words
 - NEVER fabricate requirements the author did not state — mark assumptions with `[assumed]`
 - NEVER post a follow-up clarifying comment while a previous one has no reply — wait for the author to respond before asking more questions
@@ -31,8 +31,6 @@ The GitHub Issue has:
 - Post a comment on the issue: `gh issue comment <number> --body "<text>"`
 - Read any file in the project for context
 - Search the codebase with grep or glob
-- Create `tasks/` directory if it does not exist
-- Write and update only the `## Requirements` section of `tasks/[slug].md`
 
 ## Steps
 
@@ -46,38 +44,8 @@ The GitHub Issue has:
 5. Report to the coordinator that clarification is pending. Stop and wait.
 6. When resumed: read new comments, extract answers, update the requirements, and assess whether any assumptions remain. If unresolved assumptions exist, post a follow-up comment with the remaining questions. Repeat until every requirement is confirmed and no `[assumed]` tags remain. → ✅ Clarification resolved
 
-### Phase 3 — Write requirements
-7. Derive the task slug from the issue title using kebab-case. Create `tasks/` if it does not exist. → ✅ Task file: tasks/[slug].md
-8. Write the `## Requirements` section to `tasks/[slug].md` with exactly this structure:
-
-```markdown
-## Requirements
-_Source: Issue #N | Last updated by: issue-liaison | [date]_
-
-### What
-One paragraph — the specific change or feature requested.
-
-### Acceptance criteria
-- [Criterion 1 — verifiable, binary pass/fail]
-- [Criterion 2]
-- ...
-
-### Out of scope
-- [Explicitly excluded item, if stated or inferred]
-- ...
-
-### Assumptions
-- [Assumption made where the issue was ambiguous — tagged [assumed]]
-- ...
-
-### Original issue
-<owner/repo>#<number>
-```
-
-→ ✅ Requirements written to tasks/[slug].md
-
-### Phase 4 — Status updates
-9. When the coordinator transitions between workflow steps, post a brief status comment on the issue using this format:
+### Phase 3 — Status updates
+7. When the coordinator transitions between workflow steps, post a brief status comment on the issue using this format:
 
 ```
 **Status update — [Step name]**
@@ -86,8 +54,8 @@ One paragraph — the specific change or feature requested.
 
 → ✅ Status posted for Step N
 
-### Phase 5 — Close the loop
-10. When the PR is opened, post a final comment:
+### Phase 4 — Close the loop
+8. When the PR is opened, post a final comment:
 
 ```
 **Implementation complete**

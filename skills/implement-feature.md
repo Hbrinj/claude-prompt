@@ -1,12 +1,12 @@
 ---
 name: implement-feature
-version: 1.0.0
-description: Step 2 of the coordinator workflow — implements one planned feature. Use when an approved plan exists at tasks/<slug>.md and the user has approved implementation. Owns the full sub-step sequence — feature branch, developer-agent delegation with TDD slices, file-type reviewer routing gate, feature log, push, review gate, PR, CI monitoring. For ≥2 features dispatched together, use parallel-dispatch instead (it reuses this flow per feature).
+version: 2.0.0
+description: Step 2 of the coordinator workflow — implements one approved issue. Use when Step 1 (/grill-with-docs → /to-prd → /to-issues) has produced an approved issue on the tracker and the user has approved implementation. Owns the full sub-step sequence — feature branch, /tdd implementation via the stack developer agent, file-type reviewer routing gate, feature log, push, review gate, PR, CI monitoring.
 ---
 
 ## Starting state
 
-An approved plan exists at `tasks/<feature-slug>.md` (Step 1 complete) and the user has explicitly approved implementation. No `feature/<slug>` branch exists yet for this feature.
+An approved issue exists on the tracker (Step 1 complete: `/grill-with-docs` → `/to-prd` → `/to-issues`) and the user has explicitly approved implementation. No `feature/<slug>` branch exists yet for this issue.
 
 ## Target state
 
@@ -14,11 +14,11 @@ A pushed feature branch whose diff every triggered reviewer has APPROVED, a feat
 
 ## Execute in this exact order
 
-1. **Branch** — create `feature/<feature_name>` or `fix/<issue_name>`.
+1. **Branch** — create `feature/<issue-slug>` or `fix/<issue-slug>`.
 
-2. **Code + self-review** — delegate to the developer agent matching the tech stack (see `## Developer-agent routing` below). Pass the task file (`tasks/<feature-slug>.md`) as its brief.
-   - **If the plan contains `## Slices`**, the developer agent MUST execute one slice per commit, in order: write the failing test first, then the minimum implementation to pass, then the refactor. Each commit message names the slice.
-   - The developer agent owns its own self-review loop per its agent prompt (`## Self-review before return`): after the last slice/commit, it invokes `code-reviewer`, applies CRITICAL+MAJOR findings, and repeats up to 3 cycles or until APPROVE before returning. The coordinator does NOT run `code-reviewer` separately in serial mode.
+2. **Code + self-review** — delegate to the developer agent matching the tech stack (see `## Developer-agent routing` below). Pass the issue (number/URL/body) as its brief.
+   - The developer agent follows `/tdd` for the red-green-refactor loop: one vertical slice per cycle, failing test first → minimum implementation to pass → refactor, applying its own stack-specific testing rules within that loop. Each slice is one commit naming the slice.
+   - The developer agent owns its own self-review loop per its agent prompt (`## Self-review before return`): after the last slice/commit, it invokes `code-reviewer`, applies CRITICAL+MAJOR findings, and repeats up to 3 cycles or until APPROVE before returning. The coordinator does NOT run `code-reviewer` separately.
 
 3. **File-type routing gate** — after the developer-agent self-review completes (or in lieu of it for non-code work), inspect the diff. For each touched file-type bucket, ensure the corresponding reviewer has APPROVED; run any missing reviewer now in its own self-review loop (≤3 cycles, apply CRITICAL+MAJOR each round, surface MINOR/SUGGESTION once at the end):
    - Files under `agents/` or `skills/` → run `prompt-definition-reviewer` (`agents/prompt-definition-reviewer.md`), EXCEPT files under a vendored skill directory listed in `skills/NOTICE.md` (third-party — not gated here).
@@ -58,7 +58,7 @@ A pushed feature branch whose diff every triggered reviewer has APPROVED, a feat
 
    Stop and ask: *"Implementation is complete. Approve to open the PR, or provide feedback to address first."* MUST wait for explicit approval before continuing.
 
-7. **PR** — open a pull request with the plan from `tasks/<feature-slug>.md` as the PR description.
+7. **PR** — open a pull request; link the issue it implements (e.g. "Closes #N") and summarise the slices delivered.
 
 8. **Pipeline** — monitor CI until it passes; if any check fails, read the failure, fix the root cause, push again, re-monitor; NEVER skip or bypass failing checks.
 
@@ -74,7 +74,9 @@ A pushed feature branch whose diff every triggered reviewer has APPROVED, a feat
 | Bash/shell scripts + the adjacent markdown prose documenting them | `agents/shell-developer.md` |
 | React + TypeScript web (SPA, components, hooks, client-side logic) | `agents/react-typescript-developer.md` |
 
-Supporting agents and skills: `agents/code-reviewer.md` (invoked by the developer agent's self-review loop, and by `parallel-dispatch` for the combined-diff pass), `agents/prompt-definition-reviewer.md` and `agents/general-reviewer.md` (invoked by the routing gate in step 3), `agents/architecture.md` (Step 1, on architectural impact), `agents/issue-liaison.md` (issue-driven work), `agents/security-reviewer.md` (on demand), `skills/grill-plan.md` (Step 1), `skills/parallel-dispatch.md` / `skills/parallel-docker-dispatch.md` (≥2-feature dispatches).
+Each developer agent follows `/tdd` for the red-green-refactor loop and supplies only its stack-specific testing/idiom rules.
+
+Supporting agents and skills: `skills/tdd/` (the red-green-refactor methodology every developer agent follows), `agents/code-reviewer.md` (invoked by the developer agent's self-review loop), `agents/prompt-definition-reviewer.md` and `agents/general-reviewer.md` (invoked by the routing gate in step 3), `agents/issue-liaison.md` (posts status + the PR link on GitHub-issue-driven work), `agents/security-reviewer.md` (on demand). Step 1 skills (`/grill-with-docs`, `/to-prd`, `/to-issues`) and supporting skills (`/diagnose`, `/improve-codebase-architecture`, `/triage`, `/prototype`, `/zoom-out`) are coordinator-invoked outside this skill.
 
 ## Allowed actions
 

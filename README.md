@@ -21,7 +21,7 @@ CLAUDE.md             # Repo conventions for Claude when working in this repo
 
 ## Workflow source of truth
 
-The **canonical, version-controlled** coordinator workflow is split across two files: `SYSTEM_PROMPT.md` (always-loaded skeleton — role, non-negotiable rules, Step 1 → Plan / Step 2 → Implement outline, dispatch triggers) and `skills/implement-feature.md` (Step 2 procedure, agent/skill routing index, checkpoint format, feature-log schema — loaded on demand). Two derived copies of `SYSTEM_PROMPT.md` exist downstream:
+The **canonical, version-controlled** coordinator workflow is split across two files: `SYSTEM_PROMPT.md` (always-loaded skeleton — role, non-negotiable rules, Step 1 → Understand/Specify/Slice and Step 2 → Implement outline) and `skills/implement-feature.md` (Step 2 procedure, agent/skill routing index, checkpoint format, feature-log schema — loaded on demand). Two derived copies of `SYSTEM_PROMPT.md` exist downstream:
 
 - **Consumer repos' `CLAUDE.md`** — kept in sync automatically by the `sync-upstream` skill (`skills/sync-upstream.md`), which writes the latest `SYSTEM_PROMPT.md` content into a guarded block bounded by `<!-- SYSTEM_PROMPT:START -->` / `<!-- SYSTEM_PROMPT:END -->` markers. Anything in the consumer repo's `CLAUDE.md` outside those markers is preserved.
 - **Your `~/.claude/CLAUDE.md`** — Claude Code's global instructions file. Kept in sync **manually** — `sync-upstream` does NOT touch it. After editing `SYSTEM_PROMPT.md`, copy the new content into `~/.claude/CLAUDE.md` yourself if you want the active session and other "raw" sessions (no sync-upstream installed) to pick up the change immediately.
@@ -126,33 +126,6 @@ You are a specialist in …
 ## Constraints
 - …
 ```
-
-## Dispatch scripts — host requirements
-
-The scripts under `scripts/` (notably `dispatch-docker-worker.sh` and `test-dispatch-parallel.sh`) rely on GNU tooling that ships by default on Linux but **not on macOS**. Before running them on a Mac, install:
-
-```bash
-brew install coreutils flock
-```
-
-- `coreutils` provides `timeout` (used to bound worker wall-clock).
-- `flock` provides the file lock used by the parallel-dispatch event log.
-
-Without these, you will see `timeout: command not found` and `flock: command not found`. Linux hosts and the Docker worker image already include both.
-
-### Invocation
-
-`install.sh` clones this repo to `~/.claude/claude-prompt/` (global install) or `<project>/.claude/claude-prompt/` (project install) and only symlinks `agents/`, `skills/`, and (global) `commands/` into `.claude/`. `scripts/` is not exposed at the consumer repo root, so the dispatch wrapper must be invoked via its absolute clone path:
-
-```bash
-# Global install
-~/.claude/claude-prompt/scripts/dispatch-docker-worker.sh <slug>
-
-# Project install (run from inside the consumer repo)
-.claude/claude-prompt/scripts/dispatch-docker-worker.sh <slug>
-```
-
-The wrapper resolves the consumer's repo root from the caller's CWD via `git rev-parse --show-toplevel`, so always invoke it from inside the consumer git repo. A `--dry-run` flag prints the resolved `REPO_ROOT`, `SCRIPT_DIR`, `BUILD_CONTEXT`, `WT_DIR`, and `BRANCH` and exits without touching docker — useful for sanity-checking the path resolution.
 
 ## Guard hooks
 

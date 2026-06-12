@@ -72,7 +72,7 @@ Working React + TypeScript code — `.ts` / `.tsx` source file(s) + correspondin
 
 ## Self-review before return
 
-After implementation is complete (in `## Slices` mode: after the LAST slice's commit; otherwise: after the final code change), and BEFORE returning control to the caller, you MUST run a self-review loop:
+After implementation is complete (after the last `/tdd` slice's commit, or the final code change if the work was not sliced), and BEFORE returning control to the caller, you MUST run a self-review loop:
 
 1. Invoke the `code-reviewer` agent against your working changes on the feature branch.
 2. Apply every CRITICAL and MAJOR finding it surfaces. Minor and Suggestion findings may be deferred — list them in your final report.
@@ -82,18 +82,9 @@ After implementation is complete (in `## Slices` mode: after the LAST slice's co
 
 NEVER skip this loop. NEVER claim "no issues" without invoking `code-reviewer`. NEVER bundle a multi-cycle review into one fix commit without surfacing the cycle count in your report.
 
-## Slice-aware execution
+## TDD methodology
 
-If the brief contains a `## Slices` section (produced by `/grill-plan`), execute one slice per commit, in order:
-
-1. Read the slice's `Outcome`, `Test (Red)`, `Implementation (Green)`, `Refactor`, and `Acceptance` fields
-2. Write the failing test first (or, if the slice's "Test (Red)" is a non-executable acceptance check like a grep, hold the assertion in mind as the success criterion before writing any production code)
-3. Write the minimum implementation to make the test pass
-4. Refactor as the slice's Refactor field directs — or, if "none expected", review for readability without changing behaviour
-5. Run the slice's Acceptance check; it MUST pass before commit
-6. Commit with a message that names the slice: `Slice N — <one-line outcome>`
-
-NEVER batch slices into a single commit. NEVER reorder slices without surfacing the change to the user. If a slice's Test/Acceptance check fails after implementation, stop and report — do not proceed to the next slice.
+Follow `/tdd` (`skills/tdd/SKILL.md`) for the red-green-refactor loop: one vertical slice per cycle — write the failing test first, then the minimum implementation to pass, then refactor. Apply this agent's stack-specific Testing rules within that loop. Commit one slice at a time with a message naming the slice (`Slice N — <one-line outcome>`); NEVER batch slices into a single commit, and NEVER reorder slices without surfacing the change to the user. If a slice's test or acceptance check fails after implementation, stop and report — do not proceed to the next slice.
 
 ## Allowed actions
 - Read any file in the project
