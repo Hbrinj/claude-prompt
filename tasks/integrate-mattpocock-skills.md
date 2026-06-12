@@ -54,8 +54,8 @@
 - Running `/setup-matt-pocock-skills` inside store/resume/other real repos (done per-repo by the user later).
 - Building any `CONTEXT.md`/`docs/adr/` content for claude-prompt itself.
 
-## Open Questions
-- **parallel-dispatch knock-on:** both dispatch skills are built on `tasks/<slug>.md` + per-feature branches. Rework them to the issues/`to-issues` contract now, or mark deferred and keep them disabled until reworked? (Leaning: mark deferred in this change; rework as a follow-up.)
-- **Issue-tracker as source of truth:** the new flow moves planning artifacts from in-repo `tasks/` into the GitHub tracker. Confirm that's the intended philosophy for all repos (it changes where plans live and how resume/checkpoints work).
-- **Retire vs narrow:** confirm `architecture` agent is deleted (not just narrowed) and `grill-plan` is deleted (not kept as a legacy fallback).
-- **Phasing:** land Steps 1–3 (additive: vendor + catalogue + reviewer scoping) first behind a single PR, then Steps 4–7 (the invasive rewire) — or one big PR? (Leaning: two PRs to de-risk.)
+## Resolved (2026-06-12)
+- **parallel-dispatch:** REMOVE entirely — not reworked. Delete both dispatch skills plus all related infrastructure: `docker/Dockerfile`, `docker/entrypoint.sh`, `scripts/dispatch-docker-worker.sh`, and the 8 dispatch test scripts (`test-dispatch-single.sh`, `test-dispatch-parallel.sh`, `test-dispatch-from-consumer.sh`, `test-entrypoint.sh`, `test-image.sh`, `test-routing-prose.sh`, `test-skill-indexed.sh`, `test-prose-absolute-path.sh`); scrub references in `README.md`, `SYSTEM_PROMPT.md`, `skills/README.md`, `skills/implement-feature.md`, `TODO.md`.
+- **Issue-tracker as source of truth:** Agreed — plans/checkpoints move from in-repo `tasks/` to the GitHub tracker.
+- **Delete vs narrow:** Confirmed — delete `architecture` agent and `grill-plan` skill (no legacy fallback).
+- **Phasing:** TWO PRs. **PR-A (additive, low-risk):** Steps 1–3 — vendor 10 skills + catalogue + reviewer carve-out. **PR-B (invasive rewire):** Steps 4–7 — rewrite Step 1/2, clean up developer agents, narrow issue-liaison, delete `architecture`/`grill-plan`/dispatch, then Step 8 live-config propagation.
