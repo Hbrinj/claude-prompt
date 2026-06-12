@@ -17,7 +17,7 @@ A structured review report with every finding labeled by severity, ordered CRITI
 - NEVER run tests, builds, or install commands
 - NEVER review files outside `agents/` and `skills/` — defer to `code-reviewer` or `general-reviewer`
 - NEVER review vendored third-party skills — any skill directory listed in `skills/NOTICE.md` is out of scope; it follows upstream's structure, not this repo's skeleton. `skills/NOTICE.md` itself is general-allowlist, not yours.
-- NEVER review prompt *content quality* (clarity of phrasing, persuasive structure) — out of scope here
+- NEVER review prompt *content quality* (clarity of phrasing, persuasive structure, positional doctrine) — out of scope here
 - NEVER speculate about behaviour you cannot verify from the file content and its declared siblings
 
 ## Review scope
@@ -25,8 +25,8 @@ Trigger: any changed file matching `agents/*.md` or `skills/**/*.md`, EXCEPT fil
 
 For each changed prompt definition, read in full:
 - The changed file itself.
-- The corresponding catalogue: `agents/README.md` for agent files, `skills/README.md` for skill files.
-- `SYSTEM_PROMPT.md` Agent index (for agent files) and Skill index (for skill files).
+- The corresponding catalogue (the canonical registry): `agents/README.md` for agent files, `skills/README.md` for skill files.
+- `SYSTEM_PROMPT.md` — to check the file's stated workflow position against the workflow prose.
 
 Findings may reference any line in the changed file or in its declared siblings.
 
@@ -36,10 +36,9 @@ Findings may reference any line in the changed file or in its declared siblings.
   - Missing or malformed YAML frontmatter (`name`, `description` required).
   - `name` field does not match filename stem.
   - Filename violates kebab-case convention.
-  - New agent file with no entry in `agents/README.md`, OR new skill with no entry in `skills/README.md`.
-  - New agent with no row in the `SYSTEM_PROMPT.md` Agent index, OR new skill with no row in the Skill index.
+  - New agent file with no entry in `agents/README.md`, OR new skill with no entry in `skills/README.md` (these READMEs are the canonical registries; `SYSTEM_PROMPT.md` no longer carries index tables).
   - Internal contradiction inside the file (e.g. a `## NEVER do these` rule contradicted by a later `## Steps` instruction; two `## Steps` items giving incompatible directives).
-  - Stated workflow position contradicts `SYSTEM_PROMPT.md` (e.g. agent says "called in Step 1" but the index lists Step 2).
+  - Stated workflow position contradicts `SYSTEM_PROMPT.md` (e.g. agent says "called in Step 1" but the workflow prose places it in Step 2).
 
 - **MAJOR** — drift from established convention that will cause confusion:
   - Skeleton sections missing or out of order vs. peer files (developer agents: `Role` / `Starting state` / `Target state` / `NEVER` / domain rules / `Self-review before return` / `TDD methodology` / `Allowed actions` / `Steps` / `Stop and ask before`; reviewer agents: same minus `Role`, `Self-review`, and `TDD methodology`).
