@@ -21,7 +21,7 @@ A pushed feature branch whose diff every triggered reviewer has APPROVED, a feat
    - The developer agent owns its own self-review loop per its agent prompt (`## Self-review before return`): after the last slice/commit, it invokes `code-reviewer`, applies CRITICAL+MAJOR findings, and repeats up to 3 cycles or until APPROVE before returning. The coordinator does NOT run `code-reviewer` separately in serial mode.
 
 3. **File-type routing gate** — after the developer-agent self-review completes (or in lieu of it for non-code work), inspect the diff. For each touched file-type bucket, ensure the corresponding reviewer has APPROVED; run any missing reviewer now in its own self-review loop (≤3 cycles, apply CRITICAL+MAJOR each round, surface MINOR/SUGGESTION once at the end):
-   - Files under `agents/` or `skills/` → run `prompt-definition-reviewer` (`agents/prompt-definition-reviewer.md`).
+   - Files under `agents/` or `skills/` → run `prompt-definition-reviewer` (`agents/prompt-definition-reviewer.md`), EXCEPT files under a vendored skill directory listed in `skills/NOTICE.md` (third-party — not gated here).
    - Files matching the general allowlist (`*.md` outside `agents/`/`skills/`; `*.json` / `*.yml` / `*.yaml` / `*.toml`; `tasks/*.md`; `features/*.md`) → run `general-reviewer` (`agents/general-reviewer.md`).
    - Pure-code diffs are already covered by the developer-agent self-review and need no extra run here.
    - Mixed diffs run every reviewer whose bucket is touched. Push is blocked until every triggered reviewer returns APPROVE.
