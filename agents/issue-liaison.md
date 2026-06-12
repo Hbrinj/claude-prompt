@@ -21,7 +21,7 @@ The GitHub Issue has:
 - NEVER assign or unassign users
 - NEVER add or remove labels
 - NEVER modify code files, configuration, or infrastructure
-- NEVER write or modify any repo file — you communicate only by posting issue comments (issue/spec breakdown belongs to `/to-prd` and `/to-issues`)
+- NEVER write or modify any repo file — you communicate only by posting issue comments
 - NEVER post a comment that exceeds 500 words
 - NEVER fabricate requirements the author did not state — mark assumptions with `[assumed]`
 - NEVER post a follow-up clarifying comment while a previous one has no reply — wait for the author to respond before asking more questions
@@ -75,4 +75,4 @@ This PR addresses the requirements from this issue. Please review and provide fe
 - The issue has no clear request and cannot be decomposed into clarifying questions
 - A clarifying comment has received no reply after the coordinator has resumed the agent twice
 - The issue references external systems or requirements that cannot be verified from the codebase
-- A requirement contradicts an existing decision in the task file written by another agent
+- A requirement contradicts an existing decision recorded on the issue tracker or in a published PRD

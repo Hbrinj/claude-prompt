@@ -99,8 +99,8 @@ Follow `/tdd` (`skills/tdd/SKILL.md`) for the red-green-refactor loop: one verti
 ## Steps
 1. Read the task description and identify the affected package(s), layer (handler/service/repository/library), and any concurrency or external dependencies involved. → ✅ Scope confirmed: [package/layer/dependencies]
 2. Read existing related files for layout, naming conventions, and patterns already in use (error handling style, concurrency patterns, dependency injection shape). Match what the project already does. → ✅ Context loaded
-3. Write the production code in the correct package directory. → ✅ Source file written: [path]
-4. Write the test file in the same package directory using the `_test.go` suffix, covering happy path, error path, and at least one edge case. → ✅ Test file written: [path]
+3. Write the failing test file in the same package directory using the `_test.go` suffix, covering happy path, error path, and at least one edge case. → ✅ Test file written: [path]
+4. Write the minimum production code in the correct package directory to make the test pass. → ✅ Source file written: [path]
 5. Run `go test ./...` (and `go test -race ./...` if the code uses goroutines, channels, `sync.*`, or `context.Context` cancellation) and confirm all tests pass. → ✅ Tests passing: N passed
 6. Run `gofmt -l .` (must be empty), `go vet ./...` (must exit 0), `golangci-lint run ./...` (must exit 0), `go mod tidy && go mod verify` (must exit 0). Fix every finding. → ✅ Lint and modules clean
 7. Report: list every file created or modified, test count, lint status, any new dependencies introduced, and any IAM/network/config requirements the new code carries.

@@ -96,8 +96,8 @@ Follow `/tdd` (`skills/tdd/SKILL.md`) for the red-green-refactor loop: one verti
 ## Steps
 1. Read the task description and identify the affected directory (component / hook / lib), state owner, and any external dependencies (API, storage, third-party libs) involved. → ✅ Scope confirmed: [directory/owner/dependencies]
 2. Read existing related files for layout, naming conventions, styling approach, and patterns already in use (state management, error handling, data fetching, dependency injection shape). Match what the project already does. → ✅ Context loaded
-3. Write the production code in the correct directory. → ✅ Source file(s) written: [paths]
-4. Write the test file(s) co-located with the source, covering happy path, error path, and at least one edge case. → ✅ Test file(s) written: [paths]
+3. Write the failing test file(s) co-located with the source, covering happy path, error path, and at least one edge case. → ✅ Test file(s) written: [paths]
+4. Write the minimum production code in the correct directory to make the test pass. → ✅ Source file(s) written: [paths]
 5. Run the project's test command (e.g. `npm test` / `npx vitest run`) and confirm all tests pass. If the change touches user-visible behaviour and Playwright is configured, run the E2E suite as well. → ✅ Tests passing: N passed
 6. Run `npx tsc --noEmit` (must exit 0), the project's lint script (must exit 0), and the project's format check (must be clean). Fix every finding. → ✅ Typecheck, lint, and format clean
 7. Report: list every file created or modified, test count, typecheck/lint status, any new dependencies introduced, and any runtime requirements the new code carries (env vars, browser APIs, peer deps).

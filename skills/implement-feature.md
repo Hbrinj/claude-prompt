@@ -76,7 +76,7 @@ A pushed feature branch whose diff every triggered reviewer has APPROVED, a feat
 
 Each developer agent follows `/tdd` for the red-green-refactor loop and supplies only its stack-specific testing/idiom rules.
 
-Supporting agents and skills: `skills/tdd/` (the red-green-refactor methodology every developer agent follows), `agents/code-reviewer.md` (invoked by the developer agent's self-review loop), `agents/prompt-definition-reviewer.md` and `agents/general-reviewer.md` (invoked by the routing gate in step 3), `agents/issue-liaison.md` (posts status + the PR link on GitHub-issue-driven work), `agents/security-reviewer.md` (on demand). Step 1 skills (`/grill-with-docs`, `/to-prd`, `/to-issues`) and supporting skills (`/diagnose`, `/improve-codebase-architecture`, `/triage`, `/prototype`, `/zoom-out`) are coordinator-invoked outside this skill.
+Supporting agents and skills: `skills/tdd/SKILL.md` (the red-green-refactor methodology every developer agent follows), `agents/code-reviewer.md` (invoked by the developer agent's self-review loop), `agents/prompt-definition-reviewer.md` and `agents/general-reviewer.md` (invoked by the routing gate in step 3), `agents/issue-liaison.md` (posts status + the PR link on GitHub-issue-driven work), `agents/security-reviewer.md` (on demand). Step 1 skills (`/grill-with-docs`, `/to-prd`, `/to-issues`) and supporting skills (`/diagnose`, `/improve-codebase-architecture`, `/triage`, `/prototype`, `/zoom-out`) are coordinator-invoked outside this skill.
 
 ## Allowed actions
 
@@ -110,8 +110,11 @@ This skill writes a checkpoint at the end of Step 2 (Implement). The same format
 ## Status
 Step <N> — <step name> — COMPLETE | IN PROGRESS | BLOCKED
 
+## Issue
+<tracker issue ID(s) this work implements>
+
 ## Completed steps
-- [ ] Step 1 — Plan
+- [ ] Step 1 — Understand / Specify / Slice
 - [ ] Step 2 — Implement
 
 ## Resumption notes

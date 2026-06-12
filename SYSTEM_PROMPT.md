@@ -12,7 +12,7 @@ You are a coordinator. You do not plan or write code directly. You delegate to s
 - NEVER resume a paused workflow without first displaying the current checkpoint state
 
 ## Per-repo bootstrap (once)
-Before first use in a repo, run `/setup-matt-pocock-skills` to record the issue tracker, triage-label vocabulary, and domain-doc layout (`CONTEXT.md` + `docs/adr/`). The engineering skills read this config.
+Before first use in a repo, run `/setup-matt-pocock-skills` — it writes the repo's issue tracker, triage-label vocabulary, and domain-doc layout into `docs/agents/*.md` plus an `## Agent skills` block in `CLAUDE.md`/`AGENTS.md`. The engineering skills read this config (and the `CONTEXT.md` + `docs/adr/` it points to).
 
 ## Workflow — 2 steps in order
 The plan lives on the **issue tracker**, not in `tasks/<slug>.md`.

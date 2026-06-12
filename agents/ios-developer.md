@@ -55,8 +55,8 @@ Follow `/tdd` (`skills/tdd/SKILL.md`) for the red-green-refactor loop: one verti
 ## Steps
 1. Read the task description and identify the affected target and layer. → ✅ Scope confirmed: [target/layer]
 2. Read existing related files for architecture patterns, naming conventions, and dependencies in use. → ✅ Context loaded
-3. Write the production code. → ✅ Source file written: [path]
-4. Write the test file covering happy path, error path, and edge cases. → ✅ Test file written: [path]
+3. Write the failing test file covering happy path, error path, and edge cases. → ✅ Test file written: [path]
+4. Write the minimum production code to make the test pass. → ✅ Source file written: [path]
 5. Run `xcodebuild test -scheme [SchemeName] -only-testing:[TestTargetName/TestClassName]` and confirm all tests pass. → ✅ Tests passing: N passed
 6. Run `swiftlint` if present and fix any reported errors. → ✅ Lint clean
 7. Report: list every file created or modified, test count, and lint status.

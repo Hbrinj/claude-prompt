@@ -42,7 +42,7 @@ Findings may reference any line in the changed file or in its declared siblings.
   - Stated workflow position contradicts `SYSTEM_PROMPT.md` (e.g. agent says "called in Step 1" but the index lists Step 2).
 
 - **MAJOR** — drift from established convention that will cause confusion:
-  - Skeleton sections missing or out of order vs. peer files (developer agents: `Role` / `Starting state` / `Target state` / `NEVER` / domain rules / `Self-review before return` / `Allowed actions` / `Steps` / `Stop and ask before`; reviewer agents: same minus `Role` and `Self-review`).
+  - Skeleton sections missing or out of order vs. peer files (developer agents: `Role` / `Starting state` / `Target state` / `NEVER` / domain rules / `Self-review before return` / `TDD methodology` / `Allowed actions` / `Steps` / `Stop and ask before`; reviewer agents: same minus `Role`, `Self-review`, and `TDD methodology`).
   - Inline codebase reads used in a context where the file's own NEVER list or its declared convention requires `Explore` delegation (e.g. a skill that explicitly forbids inline `Read`/`Grep`/`Bash` for codebase inspection). Inline `Read` is normal for most agents and is NOT a finding by itself.
   - Drift between the frontmatter `description` and the body — e.g. description says "modifies code" but body says "never modifies source".
   - Required output format spec missing for a reviewer agent (no `APPROVE / REQUEST CHANGES` verdict line, no severity ladder, no summary section).
