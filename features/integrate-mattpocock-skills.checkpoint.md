@@ -3,8 +3,11 @@
 ## Status
 Step 2 — Implement — IN PROGRESS (PR-A open as #24; PR-B built, awaiting review gate)
 
+## Issue
+N/A — this meta-feature predates the issue-tracker workflow it introduces; planned via `tasks/integrate-mattpocock-skills.md`.
+
 ## Completed steps
-- [x] Step 1 — Plan (plan at `tasks/integrate-mattpocock-skills.md`; decisions via AskUserQuestion 2026-06-12)
+- [x] Step 1 — Understand / Specify / Slice (plan at `tasks/integrate-mattpocock-skills.md`; decisions via AskUserQuestion 2026-06-12)
 - [~] Step 2 — Implement (PR-A open #24; PR-B built on stacked branch, pre-gate)
 
 ## Resumption notes
