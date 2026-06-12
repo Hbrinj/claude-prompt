@@ -45,7 +45,7 @@
    - Files: `agents/{android,ios,flutter,kotlin-backend,go,shell,react-typescript}-developer.md` (UPDATE) — Acceptance: each defers TDD discipline to `/tdd`; no duplicated red-green prose.
 6. **Narrow `issue-liaison`; retire `architecture`** — issue-liaison → PR/issue status comms only; remove `architecture` agent + its references (Step 1 architectural-impact hook now routes to `/improve-codebase-architecture`).
    - Files: `agents/issue-liaison.md` (UPDATE), `agents/architecture.md` (DELETE), `agents/README.md` (UPDATE), `SYSTEM_PROMPT.md` (UPDATE) — Acceptance: no dangling `architecture` references; issue-liaison scoped to comms.
-7. **Retire `grill-plan`; reconcile dispatch skills** — remove `grill-plan.md` (+ README row); update/flag `parallel-dispatch.md` + `parallel-docker-dispatch.md` which depend on the `tasks/<slug>.md` contract (see Open Questions).
+7. **Retire `grill-plan` + dispatch** — delete `grill-plan.md`, `parallel-dispatch.md`, `parallel-docker-dispatch.md`, `docker/`, and the dispatch scripts; scrub their rows from `skills/README.md` and references elsewhere (full file list in `## Resolved`). All README-row scrubbing for these happens here in PR-B, not PR-A.
    - Files: `skills/grill-plan.md` (DELETE), `skills/README.md`, `skills/parallel-dispatch.md`, `skills/parallel-docker-dispatch.md` (UPDATE) — Acceptance: no dangling `grill-plan`/`tasks/<slug>.md` references; dispatch skills either reworked to issues or explicitly marked deferred.
 8. **Propagate to live config** — after approval+push: refresh `~/.claude/CLAUDE.md` from the new `SYSTEM_PROMPT.md`; live clone already symlinks `skills/`, so vendored skills appear on `git pull`.
    - Files: `~/.claude/CLAUDE.md` (outside repo) — Acceptance: a new session shows the new workflow + all 10 skills with parsed descriptions.
@@ -58,4 +58,7 @@
 - **parallel-dispatch:** REMOVE entirely — not reworked. Delete both dispatch skills plus all related infrastructure: `docker/Dockerfile`, `docker/entrypoint.sh`, `scripts/dispatch-docker-worker.sh`, and the 8 dispatch test scripts (`test-dispatch-single.sh`, `test-dispatch-parallel.sh`, `test-dispatch-from-consumer.sh`, `test-entrypoint.sh`, `test-image.sh`, `test-routing-prose.sh`, `test-skill-indexed.sh`, `test-prose-absolute-path.sh`); scrub references in `README.md`, `SYSTEM_PROMPT.md`, `skills/README.md`, `skills/implement-feature.md`, `TODO.md`.
 - **Issue-tracker as source of truth:** Agreed — plans/checkpoints move from in-repo `tasks/` to the GitHub tracker.
 - **Delete vs narrow:** Confirmed — delete `architecture` agent and `grill-plan` skill (no legacy fallback).
-- **Phasing:** TWO PRs. **PR-A (additive, low-risk):** Steps 1–3 — vendor 10 skills + catalogue + reviewer carve-out. **PR-B (invasive rewire):** Steps 4–7 — rewrite Step 1/2, clean up developer agents, narrow issue-liaison, delete `architecture`/`grill-plan`/dispatch, then Step 8 live-config propagation.
+- **Phasing:** TWO PRs. **PR-A (additive, low-risk) — this branch:** Steps 1–3 only — vendor 10 skills + catalogue + reviewer carve-out. The `grill-plan`/dispatch catalogue rows in `skills/README.md` are intentionally left intact in PR-A and removed in PR-B. **PR-B (invasive rewire, separate branch):** Steps 4–7 — rewrite Step 1/2, clean up developer agents, narrow issue-liaison, delete `architecture`/`grill-plan`/dispatch, then Step 8 live-config propagation.
+
+## Open Questions
+None — all four resolved on 2026-06-12; see `## Resolved`.

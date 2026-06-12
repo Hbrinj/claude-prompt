@@ -8,15 +8,24 @@ of `prompt-definition-reviewer`.
 ## Source
 
 - **Project:** Matt Pocock's skills — <https://github.com/mattpocock/skills>
-- **Path:** `skills/engineering/`
+- **Upstream path:** `skills/engineering/` (each directory below is vendored locally to `skills/<name>/`, with no `engineering/` parent)
 - **Pinned commit:** `694fa30311e02c2639942308513555e61ee84a6f`
-- **License:** MIT (see full text below)
+- **License:** MIT (verbatim below, including upstream's copyright year)
 
 ## Vendored directories
 
-`setup-matt-pocock-skills/`, `grill-with-docs/`, `to-prd/`, `to-issues/`,
-`tdd/`, `diagnose/`, `improve-codebase-architecture/`, `triage/`,
-`prototype/`, `zoom-out/`
+These are the directories scoped out of `prompt-definition-reviewer`. Each lives at `skills/<name>/`:
+
+- `setup-matt-pocock-skills/`
+- `grill-with-docs/`
+- `to-prd/`
+- `to-issues/`
+- `tdd/`
+- `diagnose/`
+- `improve-codebase-architecture/`
+- `triage/`
+- `prototype/`
+- `zoom-out/`
 
 To update: re-fetch the same paths from upstream at a newer commit and bump the
 pinned commit above. Do not hand-edit vendored files — local changes are lost
