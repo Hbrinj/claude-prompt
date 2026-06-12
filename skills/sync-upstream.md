@@ -1,7 +1,7 @@
 ---
-Name: sync-upstream
-Version: 3.0.0
-Description: Establishes or updates the claude-prompt clone from https://github.com/Hbrinj/claude-prompt, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/commands to the repo directories so agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md from SYSTEM_PROMPT.md. Trigger when the user wants to pull the latest agents or skills from the shared library, set up the clone for the first time, or refresh CLAUDE.md with the latest workflow.
+name: sync-upstream
+version: 3.0.0
+description: Establishes or updates the claude-prompt clone from https://github.com/Hbrinj/claude-prompt, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/commands to the repo directories so agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md from SYSTEM_PROMPT.md. Trigger when the user wants to pull the latest agents or skills from the shared library, set up the clone for the first time, or refresh CLAUDE.md with the latest workflow.
 ---
 
 ## Starting state

@@ -69,8 +69,10 @@ What this script does:
 
   Global mode:
     1. Clones (or pulls) ${REPO_URL} into ~/.claude/claude-prompt/
-    2. Symlinks agents/, skills/, and commands/ into ~/.claude/
+    2. Symlinks agents/, skills/, commands/, and hooks/ into ~/.claude/
     3. Lets you choose a system prompt and merges it into ~/.claude/CLAUDE.md
+    4. Prints the settings.json hooks block to add manually
+       (this script never edits settings.json)
 
 EOF
 }
@@ -220,7 +222,7 @@ ensure_symlink() {
     else
       echo "  ${link_path} currently points to '${current_target}'"
       echo "  Expected target: '${target}'"
-      printf "  Update ${label} symlink to the new target? (y/N): "
+      printf '  Update %s symlink to the new target? (y/N): ' "${label}"
       read -r fix_choice </dev/tty
       if [ "${fix_choice}" = "y" ] || [ "${fix_choice}" = "Y" ]; then
         if $DRY_RUN; then
@@ -238,7 +240,7 @@ ensure_symlink() {
     fi
   elif [ -d "${link_path}" ]; then
     echo "  ${link_path} is a real directory (not a symlink)."
-    printf "  Remove it and create ${label} symlink to '${target}'? (y/N): "
+    printf "  Remove it and create %s symlink to '%s'? (y/N): " "${label}" "${target}"
     read -r fix_choice </dev/tty
     if [ "${fix_choice}" = "y" ] || [ "${fix_choice}" = "Y" ]; then
       if $DRY_RUN; then
@@ -256,7 +258,7 @@ ensure_symlink() {
     fi
   elif [ -e "${link_path}" ]; then
     echo "  ${link_path} already exists and is not a symlink or directory."
-    printf "  Remove it and create ${label} symlink to '${target}'? (y/N): "
+    printf "  Remove it and create %s symlink to '%s'? (y/N): " "${label}" "${target}"
     read -r fix_choice </dev/tty
     if [ "${fix_choice}" = "y" ] || [ "${fix_choice}" = "Y" ]; then
       if $DRY_RUN; then
@@ -341,8 +343,10 @@ ensure_symlink "${CLAUDE_DIR}/agents" "${CLONE_PATH}/agents" "agents"
 ensure_symlink "${CLAUDE_DIR}/skills" "${CLONE_PATH}/skills" "skills"
 
 # Global mode: also symlink skills as commands (Claude Code reads ~/.claude/commands/)
+# and the guard hooks (wired into settings.json manually — see snippet below)
 if [ "${INSTALL_MODE}" = "global" ]; then
   ensure_symlink "${CLAUDE_DIR}/commands" "${CLONE_PATH}/skills" "commands"
+  ensure_symlink "${CLAUDE_DIR}/hooks" "${CLONE_PATH}/scripts/hooks" "hooks"
 fi
 
 # ── Step 4: Select and merge system prompt → CLAUDE.md ─────────────────────
@@ -537,3 +541,38 @@ fi
 
 # ── Final summary ──────────────────────────────────────────────────────────
 print_summary
+
+# ── Hooks wiring snippet (global mode only) ────────────────────────────────
+# install.sh NEVER edits settings.json — it prints the block for the user to
+# add manually. See scripts/hooks/README.md for what each guard does.
+if [ "${INSTALL_MODE}" = "global" ]; then
+  cat <<'EOF'
+
+→ Guard hooks (manual step — install.sh never edits settings.json)
+  To enable the main/master guard hooks, add this to ~/.claude/settings.json
+  (merge into an existing "hooks" key if you already have one):
+
+  {
+    "hooks": {
+      "PreToolUse": [
+        {
+          "matcher": "Edit|Write|NotebookEdit",
+          "hooks": [
+            { "type": "command", "command": "bash \"$HOME/.claude/hooks/guard-main-edit.sh\"" }
+          ]
+        },
+        {
+          "matcher": "Bash",
+          "hooks": [
+            { "type": "command", "command": "bash \"$HOME/.claude/hooks/guard-push-main.sh\"" }
+          ]
+        }
+      ]
+    }
+  }
+
+  Both hooks require jq (preinstalled on recent macOS; otherwise
+  `brew install jq` / `apt install jq`). Details, the fail-open rules, and
+  the ~/.claude/hooks-exceptions format: scripts/hooks/README.md in the clone.
+EOF
+fi

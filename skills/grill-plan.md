@@ -1,7 +1,7 @@
 ---
-Name: grill-plan
-Version: 1.0.0
-Description: Use when the user wants to plan a feature, design a change, break work into vertical slices, or says "plan this" / "design this" / "let's break this down" / "grill me on a plan". Outputs to `tasks/<slug>.md`. Strict TDD shape for software work (vertical slices with one Red/Green/Refactor cycle each); plain ordered steps for non-software work.
+name: grill-plan
+version: 1.0.0
+description: Use when the user wants to plan a feature, design a change, break work into vertical slices, or says "plan this" / "design this" / "let's break this down" / "grill me on a plan". Outputs to `tasks/<slug>.md`. Strict TDD shape for software work (vertical slices with one Red/Green/Refactor cycle each); plain ordered steps for non-software work.
 ---
 
 ## Starting state
