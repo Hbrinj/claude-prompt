@@ -3,7 +3,7 @@
 The following skill directories are vendored **verbatim** from a third-party
 project and are not authored by this repo. They follow upstream's structure
 (not this repo's prompt-definition skeleton) and are intentionally scoped out
-of `prompt-definition-reviewer`.
+of the `reviewer` agent's prompt-definition checks.
 
 ## Source
 
@@ -14,7 +14,7 @@ of `prompt-definition-reviewer`.
 
 ## Vendored directories
 
-These are the directories scoped out of `prompt-definition-reviewer`. Each lives at `skills/<name>/`:
+These are the directories scoped out of the `reviewer` agent's prompt-definition checks. Each lives at `skills/<name>/`:
 
 - `setup-matt-pocock-skills/`
 - `grill-with-docs/`
