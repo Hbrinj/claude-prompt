@@ -11,7 +11,7 @@ Step 1 (Understand → Specify → Slice) and the implementation methodology are
 
 ## Vendored — Matt Pocock engineering skills (third-party, MIT)
 
-Vendored verbatim from <https://github.com/mattpocock/skills> (`skills/engineering/`). See [NOTICE.md](NOTICE.md) for the pinned commit, license, and update procedure. These follow upstream's structure and are scoped out of `prompt-definition-reviewer`.
+Vendored verbatim from <https://github.com/mattpocock/skills> (`skills/engineering/`). See [NOTICE.md](NOTICE.md) for the pinned commit, license, and update procedure. These follow upstream's structure; the `reviewer` agent skips them (they are reviewed upstream, not against this repo's skeleton).
 
 | Skill | Description |
 |-------|-------------|
