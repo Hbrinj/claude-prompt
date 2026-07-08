@@ -199,6 +199,31 @@ assert_allow "empty stdin fails open" ""
 assert_allow "missing command fails open" \
   '{"tool_name":"Bash","tool_input":{}}'
 
+# ── Exceptions file: repos listed in ~/.claude/hooks-exceptions opt out ─────
+EXCEPTED="$TMP/repo-excepted"
+mkdir -p "$EXCEPTED"
+git -C "$EXCEPTED" init -q -b feature/e
+git_c "$EXCEPTED" commit -q --allow-empty -m init
+HOME_REPO="$FAKE_HOME/wip-repo"
+mkdir -p "$HOME_REPO"
+git -C "$HOME_REPO" init -q -b fix/w
+git_c "$HOME_REPO" commit -q --allow-empty -m init
+cat > "$FAKE_HOME/.claude/hooks-exceptions" <<EOF
+# repos not using the review-evidence workflow
+$EXCEPTED
+~/wip-repo
+EOF
+
+assert_allow "implicit push in an excepted repo needs no record" \
+  "$(bash_json 'git push' "$EXCEPTED")"
+assert_allow "explicit push in an excepted repo needs no record" \
+  "$(bash_json 'git push origin feature/e' "$EXCEPTED")"
+assert_allow "exception prefix via ~ expansion" \
+  "$(bash_json 'git push origin fix/w' "$HOME_REPO")"
+assert_deny "non-excepted repo still denied with the exceptions file present" \
+  "$(bash_json 'git push origin fix/y' "$OK")"
+rm -f "$FAKE_HOME/.claude/hooks-exceptions"
+
 # ── Fail open: hook deployed without its sibling lib.sh ─────────────────────
 mkdir -p "$TMP/lonely"
 cp "$HOOK" "$TMP/lonely/"

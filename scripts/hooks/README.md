@@ -43,8 +43,14 @@ A broken hook must never brick the harness. All guards **allow** when:
 
 ## Exceptions file — `~/.claude/hooks-exceptions`
 
-`guard-main-edit.sh` skips its check for any target at or under a listed path
-prefix (useful for note vaults and other repos where editing on main is fine).
+The opt-out for repos that don't use the workflow. `guard-main-edit.sh` skips
+its check for any target file at or under a listed path prefix (useful for
+note vaults and other repos where editing on main is fine).
+`guard-push-review.sh` skips its check when the root of the repo being pushed
+(`git rev-parse --show-toplevel`) is at or under a listed prefix (repos not
+using the review-evidence workflow). `guard-push-main.sh` deliberately has no
+opt-out.
+
 One path prefix per line; a leading `~`, `$HOME`, or `${HOME}` is expanded;
 blank lines and `#` comments are ignored; the file may not exist. Prefixes
 match whole path segments — `~/notes` covers `~/notes/a.md` but not
@@ -55,6 +61,8 @@ match whole path segments — `~/notes` covers `~/notes/a.md` but not
 ~/notes
 $HOME/journal
 /Users/me/scratch
+# repos not using the review-evidence workflow — pushes need no record
+~/oss/some-fork
 ```
 
 ## Installation

@@ -34,13 +34,17 @@
 #   - deletion pushes: `--delete`/`-d`, or an empty-source `:branch` refspec
 #   - `--all`/`--mirror`/`--branches` pushes — guard-push-main.sh denies
 #     those outright, so no evidence check is attempted here
+#   - repos whose root is at or under a prefix listed in
+#     ~/.claude/hooks-exceptions — the opt-out for repos not using the
+#     review-evidence workflow (same file and format as guard-main-edit.sh)
 #
 # Fails open (allows) on: missing jq, malformed stdin JSON, a repo dir that is
 # not a git repo, detached HEAD on an implicit/HEAD push, or a refspec source
 # that is not a local branch. The same quote-blind tokenization tradeoff as
 # guard-push-main.sh applies (see scripts/hooks/README.md).
 #
-# Dependencies: jq, git, sibling lib.sh (allow/deny/read_hook_input).
+# Dependencies: jq, git, sibling lib.sh (allow/deny/read_hook_input/
+# path_in_exceptions).
 set -euo pipefail
 
 # Default reason; requires_evidence sets the branch-specific one before deny.
@@ -80,6 +84,11 @@ requires_evidence() {
   [[ "$branch" == feature/* || "$branch" == fix/* ]] || return 1
   root="$(git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null || true)"
   [[ -n "$root" ]] || return 1
+  # Opt-out: repos listed in ~/.claude/hooks-exceptions don't use the
+  # review-evidence workflow.
+  if path_in_exceptions "$root"; then
+    return 1
+  fi
   sha="$(git -C "$repo_dir" rev-parse --verify --quiet "refs/heads/$branch" 2>/dev/null || true)"
   [[ -n "$sha" ]] || return 1
   record="$root/.claude/review-evidence/${branch//\//-}.md"
