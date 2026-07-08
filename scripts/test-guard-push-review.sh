@@ -3,10 +3,13 @@
 #
 # Denies Bash commands containing a `git push` of a feature/* or fix/* branch
 # unless <repo-root>/.claude/review-evidence/<branch-slug>.md exists and its
-# `HEAD:` line matches the branch's current sha (slug = branch with `/` → `-`;
-# see skills/implement-feature.md step 5). The branch being pushed is the
-# explicit refspec source (`origin branch`, `origin src:dst`, `HEAD` resolved
-# to the current branch) or, for implicit pushes, the current branch. Allows:
+# `HEAD:` line matches the sha of the content being pushed (slug = branch
+# with `/` → `-`; see skills/implement-feature.md step 5). A push is guarded
+# when EITHER side of the refspec is feature/*/fix/*: the source (`origin
+# branch`, `origin src:dst`, `HEAD` resolved to the current branch; the
+# current branch for implicit pushes) or the destination (rename pushes,
+# raw-sha sources). The record may be keyed by the source branch or the
+# destination name. Allows:
 # matching records, non-feature/fix branches (main/master are
 # guard-push-main.sh's concern), deletion pushes (`--delete`/`-d`/`:branch`),
 # `--all`/`--mirror`/`--branches` (guard-push-main.sh denies those outright),
@@ -64,6 +67,12 @@ mkdir -p "$STALE/.claude/review-evidence"
 printf '# Review evidence: feature/stale\n\nHEAD: %s\nLane: standard\n' "$STALE_SHA" \
   > "$STALE/.claude/review-evidence/feature-stale.md"
 git_c "$STALE" commit -q --allow-empty -m two
+
+# ── Fixture: repo on a non-guarded branch (rename-push bypass checks) ───────
+CHORE="$TMP/repo-chore"
+mkdir -p "$CHORE"
+git -C "$CHORE" init -q -b chore/c
+git_c "$CHORE" commit -q --allow-empty -m init
 
 # ── Fixture: detached HEAD and a plain (non-repo) directory ─────────────────
 DETACHED="$TMP/repo-detached"
@@ -127,6 +136,17 @@ printf '%s' "$out" | grep -qF '.claude/review-evidence/fix-y.md' \
   || { echo "FAIL: deny reason does not name the record path: $out"; exit 1; }
 echo "  ok: deny reason names the branch and record path"
 
+# ── Deny: the DESTINATION side of a refspec is guarded too ──────────────────
+# Renaming on push must not smuggle unreviewed content into feature/*/fix/*.
+assert_deny "non-guarded source pushed to a feature/* destination" \
+  "$(bash_json 'git push origin chore/z:feature/sneaky' "$OK")"
+assert_deny "HEAD:feature/* while on a non-guarded branch" \
+  "$(bash_json 'git push origin HEAD:feature/promoted' "$CHORE")"
+assert_deny "raw sha pushed to a feature/* destination with no record" \
+  "$(bash_json "git push origin $OK_SHA:feature/unreviewed" "$OK")"
+assert_deny "second refspec of a multi-refspec push lacks a record" \
+  "$(bash_json 'git push origin feature/x fix/y' "$OK")"
+
 # ── Deny: record exists but its HEAD: sha is stale ──────────────────────────
 assert_deny "explicit push with a stale record" \
   "$(bash_json 'git push origin feature/stale' "$STALE")"
@@ -154,6 +174,8 @@ assert_allow "HEAD:dst — source is the current branch, record matches" \
   "$(bash_json 'git push origin HEAD:feature/renamed' "$OK")"
 assert_allow "src:dst — source has a matching record" \
   "$(bash_json 'git push origin feature/x:feature/other' "$OK")"
+assert_allow "raw sha to a feature/* destination whose record matches that sha" \
+  "$(bash_json "git push origin $OK_SHA:feature/x" "$OK")"
 assert_allow "git -C <repo> implicit push, record matches" \
   "$(bash_json "git -C $OK push" "$TMP/plain")"
 
@@ -174,6 +196,10 @@ assert_allow "empty-source refspec :fix/y (deletion)" \
 # ── Allow: multi-branch pushes are guard-push-main's concern ────────────────
 assert_allow "git push --all origin (denied by guard-push-main, not here)" \
   "$(bash_json 'git push --all origin' "$OK")"
+assert_allow "git push --mirror origin (denied by guard-push-main, not here)" \
+  "$(bash_json 'git push --mirror origin' "$OK")"
+assert_allow "git push --branches origin (denied by guard-push-main, not here)" \
+  "$(bash_json 'git push --branches origin' "$OK")"
 
 # ── Allow: unresolvable state fails open ────────────────────────────────────
 assert_allow "unknown local branch fails open" \

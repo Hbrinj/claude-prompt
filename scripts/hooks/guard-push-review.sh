@@ -16,13 +16,17 @@
 # This hook enforces the record mechanically:
 #
 # Denies:
-#   - `git push` of a feature/* or fix/* branch unless that record exists and
-#     its HEAD: line matches `git rev-parse refs/heads/<branch>` — any new
-#     commit invalidates the record. The branch being pushed is the explicit
-#     refspec source (`git push origin feature/x`, `git push origin
-#     feature/x:dst`; force `+` and refs/heads/ prefixes tolerated; `HEAD`
-#     resolves to the current branch), or the current branch on an implicit
-#     push (`git push`, `git push origin`, with or without flags)
+#   - `git push` where EITHER side of a refspec is a feature/* or fix/*
+#     branch — the source being pushed (`git push origin feature/x`; `HEAD`
+#     resolves to the current branch; the current branch on an implicit
+#     `git push`/`git push origin`) or the destination being created
+#     (`git push origin chore/z:feature/sneaky`, `git push origin
+#     <sha>:feature/x` — rename pushes must not smuggle unreviewed content
+#     into the guarded namespaces; force `+` and refs/heads/ prefixes
+#     tolerated) — unless the record exists and its HEAD: line matches the
+#     sha of the content being pushed (`git rev-parse` of the source). Any
+#     new commit invalidates the record. The record may be keyed by the
+#     source branch slug or, for rename/raw-sha pushes, the destination slug
 #   - quote/backslash stripping, `git -C <dir>` overrides, and
 #     compound-command splitting mirror guard-push-main.sh: quoted refspecs,
 #     shell wrappers (`sh -c '…'`), and any denied segment of a
@@ -40,8 +44,9 @@
 #
 # Fails open (allows) on: missing jq, malformed stdin JSON, a repo dir that is
 # not a git repo, detached HEAD on an implicit/HEAD push, or a refspec source
-# that is not a local branch. The same quote-blind tokenization tradeoff as
-# guard-push-main.sh applies (see scripts/hooks/README.md).
+# that resolves to no local commit (the push itself would fail). The same
+# quote-blind tokenization tradeoff as guard-push-main.sh applies (see
+# scripts/hooks/README.md).
 #
 # Dependencies: jq, git, sibling lib.sh (allow/deny/read_hook_input/
 # path_in_exceptions).
@@ -67,21 +72,37 @@ command_str="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/de
 session_cwd="$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null || true)"
 [[ -n "$session_cwd" ]] || session_cwd="$PWD"
 
-# requires_evidence <src-ref> <repo-dir> — true when <src-ref>, pushed from
-# the repo at <repo-dir>, is a feature/* or fix/* branch WITHOUT a
-# review-evidence record matching its current sha; sets DENY_REASON.
-# Anything unresolvable — not a repo, detached HEAD for a HEAD push, a source
-# that is not a local branch — is false (fail open).
+# requires_evidence <src-ref> <dst-ref> <repo-dir> — true when the push of
+# <src-ref> to <dst-ref> ("" for a bare refspec or an implicit push) from the
+# repo at <repo-dir> touches the guarded feature/*/fix/* namespaces on EITHER
+# side WITHOUT a review-evidence record matching the sha of the pushed
+# content; sets DENY_REASON. The record may be keyed by the source branch
+# slug or the destination slug (rename/raw-sha pushes). Anything unresolvable
+# — not a repo, detached HEAD for a HEAD push, a source naming no local
+# commit — is false (fail open: the push itself would fail).
 requires_evidence() {
-  local src="$1" repo_dir="$2" branch root sha record
+  local src="$1" dst="$2" repo_dir="$3" branch="" root sha record
   src="${src#refs/heads/}"
+  dst="${dst#refs/heads/}"
+
+  # Resolve the source to a local branch when it names one.
   if [[ "$src" == "HEAD" ]]; then
     branch="$(git -C "$repo_dir" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
     [[ -n "$branch" ]] || return 1
-  else
+  elif git -C "$repo_dir" show-ref --verify --quiet "refs/heads/$src" 2>/dev/null; then
     branch="$src"
   fi
-  [[ "$branch" == feature/* || "$branch" == fix/* ]] || return 1
+
+  # A bare refspec (no `:`) pushes to a same-named remote ref.
+  [[ -n "$dst" ]] || dst="${branch:-$src}"
+
+  # Guarded when either side is feature/* or fix/*: the local branch being
+  # pushed, or the remote branch being created/updated by a rename push.
+  if [[ "$branch" != feature/* && "$branch" != fix/* &&
+        "$dst"    != feature/* && "$dst"    != fix/*    ]]; then
+    return 1
+  fi
+
   root="$(git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null || true)"
   [[ -n "$root" ]] || return 1
   # Opt-out: repos listed in ~/.claude/hooks-exceptions don't use the
@@ -89,15 +110,30 @@ requires_evidence() {
   if path_in_exceptions "$root"; then
     return 1
   fi
-  sha="$(git -C "$repo_dir" rev-parse --verify --quiet "refs/heads/$branch" 2>/dev/null || true)"
-  [[ -n "$sha" ]] || return 1
-  record="$root/.claude/review-evidence/${branch//\//-}.md"
-  if [[ -f "$record" ]] && grep -qE "^HEAD: ${sha}[[:space:]]*$" "$record" 2>/dev/null; then
-    return 1
+
+  # The sha of the content being pushed: the source branch tip, or whatever
+  # commit a raw-sha/tag source resolves to.
+  if [[ -n "$branch" ]]; then
+    sha="$(git -C "$repo_dir" rev-parse --verify --quiet "refs/heads/$branch" 2>/dev/null || true)"
+  else
+    sha="$(git -C "$repo_dir" rev-parse --verify --quiet "${src}^{commit}" 2>/dev/null || true)"
   fi
+  [[ -n "$sha" ]] || return 1
+
+  # Accept a record keyed by the source branch or by the destination.
+  local name
+  for name in "$branch" "$dst"; do
+    [[ -n "$name" ]] || continue
+    record="$root/.claude/review-evidence/${name//\//-}.md"
+    if [[ -f "$record" ]] && grep -qE "^HEAD: ${sha}[[:space:]]*$" "$record" 2>/dev/null; then
+      return 1
+    fi
+  done
+
   # Tokenization already strips quotes/backslashes from explicit refspecs;
   # scrub the symbolic-ref path too so the reason stays valid JSON.
-  local safe="${branch//\"/}"
+  local safe="${branch:-$dst}"
+  safe="${safe//\"/}"
   safe="${safe//\\/}"
   DENY_REASON="push blocked: no review-evidence record matching HEAD for ${safe} — write .claude/review-evidence/${safe//\//-}.md at the review step (skills/implement-feature.md step 5); a new commit invalidates the record."
   return 0
@@ -191,18 +227,21 @@ segment_denies() {
     repo_dir="$git_dir"
   fi
 
-  # Explicit refspecs: the SOURCE side names the branch being pushed.
+  # Explicit refspecs: source names the content pushed, destination the
+  # remote ref written.
   if (( ${#positionals[@]} >= 2 )); then
-    local j spec src
+    local j spec src dst
     for (( j = 1; j < ${#positionals[@]}; j++ )); do
       spec="${positionals[j]#+}"
       src="$spec"
+      dst=""
       if [[ "$spec" == *:* ]]; then
         src="${spec%%:*}"
+        dst="${spec#*:}"
       fi
       # `:branch` (empty source) is a deletion refspec — skip it.
       [[ -n "$src" ]] || continue
-      if requires_evidence "$src" "$repo_dir"; then
+      if requires_evidence "$src" "$dst" "$repo_dir"; then
         return 0
       fi
     done
@@ -210,7 +249,7 @@ segment_denies() {
   fi
 
   # Implicit push: the current branch is the one being pushed.
-  requires_evidence HEAD "$repo_dir"
+  requires_evidence HEAD "" "$repo_dir"
 }
 
 # Split compound commands on &&, ||, ;, |, and newlines; any denied
