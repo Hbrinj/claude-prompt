@@ -84,7 +84,8 @@ prints the snippet below; it never edits `settings.json` itself. Add to
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "bash \"$HOME/.claude/hooks/guard-push-main.sh\"" }
+          { "type": "command", "command": "bash \"$HOME/.claude/hooks/guard-push-main.sh\"" },
+          { "type": "command", "command": "bash \"$HOME/.claude/hooks/guard-push-review.sh\"" }
         ]
       }
     ]
