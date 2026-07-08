@@ -3,7 +3,7 @@
 | Skill | Description |
 |-------|-------------|
 | [sync-upstream](sync-upstream.md) | Establishes or updates the claude-prompt clone, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/commands so all agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md |
-| [implement-feature](implement-feature.md) | Step 2 of the coordinator workflow — implements one approved issue: branch, `developer`-agent implementation with enforced TDD outcomes, verification by execution, single fresh-context `reviewer` pass, review-evidence record, issue status comments, push, review gate, PR, CI monitoring. Holds the stack-brief routing table, evidence-record schema, and status-comment format. |
+| [implement-feature](implement-feature.md) | Step 2 of the coordinator workflow — implements one approved issue: branch, `developer`-agent implementation with enforced TDD outcomes, verification by execution, fresh-context `reviewer` pass with a confirm re-pass after fixes, review-evidence record, issue status comments, push, review gate, PR, CI monitoring. Holds the stack-brief routing table, evidence-record schema, and status-comment format. |
 
 [stacks/](stacks/README.md) holds the per-stack reference briefs the `developer` agent loads (not slash-command skills).
 

@@ -34,7 +34,7 @@ Classify every request before starting and state the lane and why. When unsure b
 MUST wait for explicit approval before Step 2.
 
 ### Step 2 — Implement
-Invoke `/implement-feature` with the target issue and lane. It owns the full sub-step sequence: branch → `developer` agent (TDD with enforced outcomes; stack brief per its routing table) → verify by execution → single fresh-context `reviewer` pass → review-evidence record → issue status comment → push → review gate → PR → CI monitoring.
+Invoke `/implement-feature` with the target issue and lane. It owns the full sub-step sequence: branch → `developer` agent (TDD with enforced outcomes; stack brief per its routing table) → verify by execution → fresh-context `reviewer` pass (confirm re-pass after fixes) → review-evidence record → issue status comment → push → review gate → PR → CI monitoring.
 
 For architecture-shaped work use `/improve-codebase-architecture`; for design exploration `/prototype`; to triage incoming issues `/triage`; for hard bugs `/diagnose`; for orientation `/zoom-out`. On tracker-driven work the `issue-liaison` agent posts status updates and the final PR link on the issue.
 

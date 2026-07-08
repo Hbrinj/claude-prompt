@@ -1,7 +1,7 @@
 ---
 name: implement-feature
 version: 3.0.0
-description: Step 2 of the coordinator workflow — implements one approved issue in the standard or high-risk lane. Use when Step 1 has produced an approved issue on the tracker and the user has approved implementation. Owns the full sub-step sequence — feature branch, developer-agent implementation with enforced TDD outcomes, verification by execution, single fresh-context reviewer pass, review-evidence record, issue status comments, push, review gate, PR, CI monitoring.
+description: Step 2 of the coordinator workflow — implements one approved issue in the standard or high-risk lane. Use when Step 1 has produced an approved issue on the tracker and the user has approved implementation. Owns the full sub-step sequence — feature branch, developer-agent implementation with enforced TDD outcomes, verification by execution, fresh-context reviewer pass with a confirm re-pass after fixes, review-evidence record, issue status comments, push, review gate, PR, CI monitoring.
 ---
 
 ## Starting state
