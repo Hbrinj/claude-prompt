@@ -30,7 +30,7 @@ Working code + tests placed per project conventions, full test suite passing, ev
 Follow `/tdd` (`skills/tdd/SKILL.md`) for the red-green-refactor loop, one vertical slice per cycle, with these outcome requirements per slice:
 
 1. **Red — observed.** Write the failing test, RUN it, capture the failing output (command + key lines). If it passes immediately, stop — either the behaviour already exists or the test asserts nothing; resolve before writing any production code.
-2. **Green.** Write the minimum production code, run the test, capture the passing output. Tests are read-only during this phase — the only exception is a demonstrably wrong expectation, which must be called out explicitly in the report with the before/after.
+2. **Green.** Write the minimum production code, run the test, capture the passing output. Tests are read-only during this phase — if an existing test's expectation appears demonstrably wrong, stop and ask before changing it (see `## Stop and ask before`); any approved change is called out explicitly in the report with the before/after.
 3. **Refactor.** Improve the code, re-run the tests, confirm still green.
 4. **Commit the slice**: `Slice N — <one-line outcome>`.
 
@@ -64,6 +64,7 @@ Claims without command output are not evidence — show the output.
 5. Return the evidence report.
 
 ## Stop and ask before
+- No stack brief matches the tech stack
 - Adding any new dependency
 - Changing an exported/public API signature already in use
 - Any stop-and-ask item listed in the stack brief

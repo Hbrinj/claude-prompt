@@ -25,7 +25,7 @@ A review report where every finding is a claim with evidence, ordered CRITICAL �
 
 **Intent and evidence — always, first:**
 - Does the diff implement what the issue states? List every stated requirement with no corresponding change.
-- Does the developer's evidence hold up — do the claimed tests exist in the diff and assert real behaviour (not tautologies)? Were any existing tests weakened, loosened, deleted, or disabled? Test manipulation is always CRITICAL.
+- Does the developer's evidence hold up — do the claimed tests exist in the diff and assert real behaviour (not tautologies)? Were any existing tests weakened, loosened, deleted, or disabled? Test manipulation is always CRITICAL — the only exception is an expectation fix the developer's evidence report documents as approved and demonstrably wrong, with the before/after; verify that justification holds.
 
 **Code:**
 - Correctness: logic errors, unhandled error paths, race conditions, boundary conditions.
@@ -34,7 +34,7 @@ A review report where every finding is a claim with evidence, ordered CRITICAL �
 
 **Prompt definitions** (`agents/*.md`, `skills/**/*.md`, excluding vendored directories per `skills/NOTICE.md`):
 - Frontmatter present with `name` matching the filename stem; kebab-case filename.
-- Every new agent/skill has its one-line entry in `agents/README.md` / `skills/README.md`.
+- Every new agent/skill has its one-line entry in `agents/README.md` / `skills/README.md` — except `skills/stacks/*.md` briefs, which register in `skills/stacks/README.md` and the routing table in `skills/implement-feature.md` instead.
 - No internal contradiction (e.g. a NEVER rule contradicted by a Steps instruction).
 - No contradiction with the workflow in `SYSTEM_PROMPT.md`.
 

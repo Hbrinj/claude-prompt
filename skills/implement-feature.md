@@ -23,7 +23,7 @@ A pushed feature branch with a review-evidence record matching HEAD, a status co
    - Drive the affected flow end-to-end — run the app/CLI/service and exercise the change the way a user would, not only through the tests. Capture what you observed.
    - If the diff has no runtime surface to drive (pure docs/config), record that and why.
 
-4. **Review — single fresh-context pass** — dispatch the `reviewer` agent (`agents/reviewer.md`) with the issue brief, the developer's evidence report, and your verification output. It returns claims-with-evidence findings and a verdict.
+4. **Review — one fresh-context pass, plus one confirm re-pass after fixes** — dispatch the `reviewer` agent (`agents/reviewer.md`) with the issue brief, the developer's evidence report, and your verification output. It returns claims-with-evidence findings and a verdict.
    - Apply CRITICAL and MAJOR findings (route code fixes through the `developer` agent), then re-invoke `reviewer` ONCE to confirm the fixes. Surface MINOR/SUGGESTION findings to the user unapplied.
    - If the confirm pass still returns REQUEST CHANGES, stop and ask the user.
    - **High-risk lane only**: also dispatch `security-reviewer`; any new CRITICAL or HIGH finding in files the diff touches blocks until resolved.
