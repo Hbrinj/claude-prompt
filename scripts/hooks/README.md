@@ -1,28 +1,29 @@
 # Guard hooks
 
-Claude Code **PreToolUse** hooks that enforce two of the workflow's
-non-negotiables mechanically instead of as advisory prose. Both read the hook
-JSON on stdin, print a `permissionDecision: "deny"` object to deny, and exit 0
-with no output to allow.
+Claude Code **PreToolUse** hooks that enforce three of the workflow's
+non-negotiables mechanically instead of as advisory prose. All of them read
+the hook JSON on stdin, print a `permissionDecision: "deny"` object to deny,
+and exit 0 with no output to allow.
 
 | Script | Matcher | What it blocks |
 |--------|---------|----------------|
 | `guard-main-edit.sh` | `Edit\|Write\|NotebookEdit` | Editing/creating files while the target file's git repo is on `main`/`master`. Write targets that don't exist yet are handled by walking up the dirname chain to the nearest existing directory. Deny reason: "On main/master — create a feature branch first". |
 | `guard-push-main.sh` | `Bash` | Any `git push` targeting `main`/`master`: explicit destinations (`git push origin main`, `git push origin HEAD:main`, `git push origin feature/x:main`, with or without flags) and implicit pushes (`git push`, `git push origin`, `git push --force`) while the session cwd's repo (or a `git -C <dir>` override) is on main/master. Quote and backslash characters are stripped before matching, so `git push origin "main"`, `git push origin ma\in`, `\git push origin main`, and shell wrappers like `sh -c 'git push origin main'` (or `bash -c`/`zsh -c`) are denied too. `git push --all`, `--mirror`, and `--branches` are denied outright regardless of the current branch — they push every branch, main included. Compound commands (`&&`, `;`, `\|\|`, `\|`, newlines) are denied if any segment is a denied push. Refspec destinations are matched as whole segments — `feature/main-page` and `domain-fix` are not denied. |
+| `guard-push-review.sh` | `Bash` | Any `git push` of a `feature/*` or `fix/*` branch without a review-evidence record matching HEAD. The record lives at `<repo-root>/.claude/review-evidence/<branch-slug>.md` (slug = branch name with `/` → `-`) and must contain a line `HEAD: <full sha>` equal to `git rev-parse refs/heads/<branch>` — any new commit invalidates it; the workflow writes it at the review step (`skills/implement-feature.md` step 5). The branch being pushed is the explicit refspec source (`origin feature/x`, `origin feature/x:dst`, force `+` and `refs/heads/` prefixes tolerated, `HEAD` resolved to the current branch) or, for implicit pushes, the current branch of the session cwd's repo (or a `git -C <dir>` override). Skipped for: deletion pushes (`--delete`/`-d`, or an empty-source `:branch` refspec), branches outside `feature/*`/`fix/*` (main/master are `guard-push-main.sh`'s concern), and `--all`/`--mirror`/`--branches` pushes (`guard-push-main.sh` denies those outright). Same quote-stripping, shell-wrapper, and compound-command handling as `guard-push-main.sh`. |
 
-Both guards source their shared allow/deny/stdin-parsing helpers from the
-sibling `lib.sh`, located via `$(dirname "$0")` — deploy the directory as a
-whole (the installer symlinks it as a whole), not individual scripts.
+All three guards source their shared allow/deny/stdin-parsing helpers from
+the sibling `lib.sh`, located via `$(dirname "$0")` — deploy the directory as
+a whole (the installer symlinks it as a whole), not individual scripts.
 
 ### Accepted tradeoff — quote-blind segment splitting
 
-`guard-push-main.sh` splits compound commands and tokenizes without parsing
-shell quoting, and errs toward blocking. A quoted string that merely
-*mentions* a bad push — e.g. `git commit -m 'x && git push origin main y'` —
-is denied as a false positive. This is a deliberate safe-direction tradeoff:
-a full shell parser is out of scope, and a false deny costs a reword while a
-false allow costs a push to main. Reword the string (or run the command
-outside the harness) to proceed.
+`guard-push-main.sh` and `guard-push-review.sh` split compound commands and
+tokenize without parsing shell quoting, and err toward blocking. A quoted
+string that merely *mentions* a bad push — e.g. `git commit -m 'x && git push
+origin main y'` — is denied as a false positive. This is a deliberate
+safe-direction tradeoff: a full shell parser is out of scope, and a false
+deny costs a reword while a false allow costs a push to main or an unreviewed
+push. Reword the string (or run the command outside the harness) to proceed.
 
 In the other direction, constructs that only resolve at shell-evaluation time
 (variables, command substitution, brace expansion — `git push origin $B`,
@@ -31,12 +32,14 @@ pushes, not a sandbox against adversarial ones.
 
 ## Fail open
 
-A broken hook must never brick the harness. Both guards **allow** when:
+A broken hook must never brick the harness. All guards **allow** when:
 
 - `jq` is not installed, or stdin is not valid JSON
 - the sibling `lib.sh` is missing next to the guard script
 - the target path is not inside a git repo, or the repo is on a detached HEAD
 - the tool is not one the guard inspects
+- the refspec source is not a local branch, or the branch cannot be resolved
+  (`guard-push-review.sh` — a push it cannot verify is allowed, not blocked)
 
 ## Exceptions file — `~/.claude/hooks-exceptions`
 
@@ -92,5 +95,6 @@ prints the snippet below; it never edits `settings.json` itself. Add to
 ```bash
 ./scripts/test-guard-main-edit.sh
 ./scripts/test-guard-push-main.sh
+./scripts/test-guard-push-review.sh
 ./scripts/test-install-hooks.sh
 ```
