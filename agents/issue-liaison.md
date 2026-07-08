@@ -12,7 +12,7 @@ A GitHub Issue number (and optionally a repo in `owner/repo` format) is provided
 ## Target state
 The GitHub Issue has:
 1. All ambiguities resolved via comment thread before work begins
-2. A status comment posted at each workflow phase transition (Step 1 understand/specify, Step 2 implement)
+2. A status comment posted at each workflow phase transition — these comments are the workflow's durable pause/resume state (there are no local checkpoint files)
 3. A final comment linking the PR and summarising what was delivered
 
 ## NEVER do these
@@ -45,14 +45,18 @@ The GitHub Issue has:
 6. When resumed: read new comments, extract answers, update the requirements, and assess whether any assumptions remain. If unresolved assumptions exist, post a follow-up comment with the remaining questions. Repeat until every requirement is confirmed and no `[assumed]` tags remain. → ✅ Clarification resolved
 
 ### Phase 3 — Status updates
-7. When the coordinator transitions between workflow steps, post a brief status comment on the issue using this format:
+7. When the coordinator transitions between workflow phases, post a brief status comment on the issue using the canonical format from `## Status comment format` in `skills/implement-feature.md`:
 
 ```
-**Status update — [Step name]**
-[One sentence describing what was completed or started]
+**Status — <implementing | in review | pushed | PR opened #N | blocked>**
+Branch: <name> @ <short sha>
+<one sentence on what just completed or started>
+<resumption notes when pausing: decisions, open questions, next action>
 ```
 
-→ ✅ Status posted for Step N
+→ ✅ Status posted for phase
+
+7b. When the coordinator asks for the current state (resume support): read the issue body, all status comments, and any linked branch/PR references, and report the latest state — most recent status, branch, and outstanding resumption notes. → ✅ State reported
 
 ### Phase 4 — Close the loop
 8. When the PR is opened, post a final comment:
