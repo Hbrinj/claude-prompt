@@ -43,10 +43,11 @@
 #     review-evidence workflow (same file and format as guard-main-edit.sh)
 #
 # Fails open (allows) on: missing jq, malformed stdin JSON, a repo dir that is
-# not a git repo, detached HEAD on an implicit/HEAD push, or a refspec source
-# that resolves to no local commit (the push itself would fail). The same
-# quote-blind tokenization tradeoff as guard-push-main.sh applies (see
-# scripts/hooks/README.md).
+# not a git repo, detached HEAD on an implicit push (an explicit refspec with
+# a guarded destination is still checked, keyed by the destination), or a
+# refspec source that resolves to no local commit (the push itself would
+# fail). The same quote-blind tokenization tradeoff as guard-push-main.sh
+# applies (see scripts/hooks/README.md).
 #
 # Dependencies: jq, git, sibling lib.sh (allow/deny/read_hook_input/
 # path_in_exceptions).
@@ -85,10 +86,12 @@ requires_evidence() {
   src="${src#refs/heads/}"
   dst="${dst#refs/heads/}"
 
-  # Resolve the source to a local branch when it names one.
+  # Resolve the source to a local branch when it names one. A detached HEAD
+  # leaves branch empty and falls through — the destination side must still
+  # be guarded (`git push origin HEAD:feature/x` while detached), and the
+  # commit resolves via ${src}^{commit} below.
   if [[ "$src" == "HEAD" ]]; then
     branch="$(git -C "$repo_dir" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
-    [[ -n "$branch" ]] || return 1
   elif git -C "$repo_dir" show-ref --verify --quiet "refs/heads/$src" 2>/dev/null; then
     branch="$src"
   fi

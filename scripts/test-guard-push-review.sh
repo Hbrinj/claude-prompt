@@ -146,6 +146,18 @@ assert_deny "raw sha pushed to a feature/* destination with no record" \
   "$(bash_json "git push origin $OK_SHA:feature/unreviewed" "$OK")"
 assert_deny "second refspec of a multi-refspec push lacks a record" \
   "$(bash_json 'git push origin feature/x fix/y' "$OK")"
+assert_deny "detached HEAD to a feature/* destination with no record" \
+  "$(bash_json 'git push origin HEAD:feature/sneaky' "$DETACHED")"
+assert_deny "detached HEAD to a refs/heads/-qualified feature/* destination" \
+  "$(bash_json 'git push origin HEAD:refs/heads/feature/sneaky' "$DETACHED")"
+
+# A destination-keyed record matching the detached commit satisfies the guard.
+DET_SHA="$(git -C "$DETACHED" rev-parse HEAD)"
+mkdir -p "$DETACHED/.claude/review-evidence"
+printf '# Review evidence: feature/reviewed\n\nHEAD: %s\nLane: standard\n' "$DET_SHA" \
+  > "$DETACHED/.claude/review-evidence/feature-reviewed.md"
+assert_allow "detached HEAD to a destination whose record matches that commit" \
+  "$(bash_json 'git push origin HEAD:feature/reviewed' "$DETACHED")"
 
 # ── Deny: record exists but its HEAD: sha is stale ──────────────────────────
 assert_deny "explicit push with a stale record" \

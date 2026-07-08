@@ -37,6 +37,9 @@ A broken hook must never brick the harness. All guards **allow** when:
 - `jq` is not installed, or stdin is not valid JSON
 - the sibling `lib.sh` is missing next to the guard script
 - the target path is not inside a git repo, or the repo is on a detached HEAD
+  (for `guard-push-review.sh`, detached HEAD only fails open on implicit
+  pushes — an explicit refspec with a `feature/*`/`fix/*` destination is
+  still checked, keyed by the destination)
 - the tool is not one the guard inspects
 - the refspec source resolves to no local commit (`guard-push-review.sh` —
   the push itself would fail, so there is nothing to verify)
