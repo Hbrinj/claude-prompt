@@ -130,7 +130,13 @@ You are a specialist in …
 
 ## Guard hooks
 
-`scripts/hooks/` contains PreToolUse hooks that mechanically enforce three workflow non-negotiables: `guard-main-edit.sh` denies Edit/Write/NotebookEdit while the target's repo is on main/master, `guard-push-main.sh` denies `git push` to main/master, and `guard-push-review.sh` denies pushing a `feature/*`/`fix/*` branch without a `.claude/review-evidence/<branch-slug>.md` record whose `HEAD:` line matches the pushed commit (written at the review step of `/implement-feature`). `install.sh --global` symlinks `~/.claude/hooks` → `<clone>/scripts/hooks` and prints the `settings.json` block to add manually (it never edits `settings.json`). All hooks require `jq` (preinstalled on recent macOS; otherwise `brew install jq`) and fail open when `jq` is missing or stdin is malformed. Opt-outs live in `~/.claude/hooks-exceptions` (per-path for the edit guard; per-repo for the push-review guard). Full contract: [`scripts/hooks/README.md`](scripts/hooks/README.md).
+`scripts/hooks/` contains PreToolUse hooks that mechanically enforce three workflow non-negotiables:
+
+- `guard-main-edit.sh` — denies Edit/Write/NotebookEdit while the target's repo is on main/master.
+- `guard-push-main.sh` — denies `git push` to main/master.
+- `guard-push-review.sh` — denies pushing a `feature/*`/`fix/*` branch without a `.claude/review-evidence/<branch-slug>.md` record whose `HEAD:` line matches the pushed commit (written at the review step of `/implement-feature`).
+
+`install.sh --global` symlinks `~/.claude/hooks` → `<clone>/scripts/hooks` and prints the `settings.json` block to add manually (it never edits `settings.json`). All hooks require `jq` (preinstalled on recent macOS; otherwise `brew install jq`) and fail open when `jq` is missing or stdin is malformed. Opt-outs live in `~/.claude/hooks-exceptions` (per-path for the edit guard; per-repo for the push-review guard). Full contract: [`scripts/hooks/README.md`](scripts/hooks/README.md).
 
 ## Contributing
 
