@@ -14,6 +14,7 @@ agents/
 └── *.md              # Individual agent definitions
 skills/
 ├── README.md         # Skills catalogue and usage notes
+├── stacks/           # Per-stack reference briefs loaded by the developer agent
 └── *.md              # Individual skill definitions
 SYSTEM_PROMPT.md      # Coordinator workflow skeleton — source of truth with skills/implement-feature.md (committed)
 CLAUDE.md             # Repo conventions for Claude when working in this repo
@@ -21,7 +22,7 @@ CLAUDE.md             # Repo conventions for Claude when working in this repo
 
 ## Workflow source of truth
 
-The **canonical, version-controlled** coordinator workflow is split across two files: `SYSTEM_PROMPT.md` (always-loaded skeleton — role, non-negotiable rules, Step 1 → Understand/Specify/Slice and Step 2 → Implement outline) and `skills/implement-feature.md` (Step 2 procedure, agent/skill routing index, checkpoint format, feature-log schema — loaded on demand). Two derived copies of `SYSTEM_PROMPT.md` exist downstream:
+The **canonical, version-controlled** coordinator workflow is split across two files: `SYSTEM_PROMPT.md` (always-loaded skeleton — role, non-negotiable rules, the express/standard/high-risk lanes, Step 1 → Understand/Specify/Slice and Step 2 → Implement outline) and `skills/implement-feature.md` (Step 2 procedure, stack-brief routing table, review-evidence record schema, status-comment format — loaded on demand). Two derived copies of `SYSTEM_PROMPT.md` exist downstream:
 
 - **Consumer repos' `CLAUDE.md`** — kept in sync automatically by the `sync-upstream` skill (`skills/sync-upstream.md`), which writes the latest `SYSTEM_PROMPT.md` content into a guarded block bounded by `<!-- SYSTEM_PROMPT:START -->` / `<!-- SYSTEM_PROMPT:END -->` markers. Anything in the consumer repo's `CLAUDE.md` outside those markers is preserved.
 - **Your `~/.claude/CLAUDE.md`** — Claude Code's global instructions file. Kept in sync **manually** — `sync-upstream` does NOT touch it. After editing `SYSTEM_PROMPT.md`, copy the new content into `~/.claude/CLAUDE.md` yourself if you want the active session and other "raw" sessions (no sync-upstream installed) to pick up the change immediately.
@@ -129,7 +130,7 @@ You are a specialist in …
 
 ## Guard hooks
 
-`scripts/hooks/` contains PreToolUse hooks that mechanically enforce two workflow non-negotiables: `guard-main-edit.sh` denies Edit/Write/NotebookEdit while the target's repo is on main/master, and `guard-push-main.sh` denies `git push` to main/master. `install.sh --global` symlinks `~/.claude/hooks` → `<clone>/scripts/hooks` and prints the `settings.json` block to add manually (it never edits `settings.json`). Both hooks require `jq` (preinstalled on recent macOS; otherwise `brew install jq`) and fail open when `jq` is missing or stdin is malformed. Per-path opt-outs for the edit guard live in `~/.claude/hooks-exceptions`. Full contract: [`scripts/hooks/README.md`](scripts/hooks/README.md).
+`scripts/hooks/` contains PreToolUse hooks that mechanically enforce three workflow non-negotiables: `guard-main-edit.sh` denies Edit/Write/NotebookEdit while the target's repo is on main/master, `guard-push-main.sh` denies `git push` to main/master, and `guard-push-review.sh` denies pushing a `feature/*`/`fix/*` branch without a `.claude/review-evidence/<branch-slug>.md` record whose `HEAD:` line matches the pushed commit (written at the review step of `/implement-feature`). `install.sh --global` symlinks `~/.claude/hooks` → `<clone>/scripts/hooks` and prints the `settings.json` block to add manually (it never edits `settings.json`). All hooks require `jq` (preinstalled on recent macOS; otherwise `brew install jq`) and fail open when `jq` is missing or stdin is malformed. Opt-outs live in `~/.claude/hooks-exceptions` (per-path for the edit guard; per-repo for the push-review guard). Full contract: [`scripts/hooks/README.md`](scripts/hooks/README.md).
 
 ## Contributing
 
