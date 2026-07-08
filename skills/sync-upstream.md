@@ -148,8 +148,8 @@ Staged changes are NOT committed. Review with `git diff` before committing.
 
 ## Allowed actions
 
-- Run `git clone` and `git -C .claude/claude-prompt pull` commands
 - Run `git rev-parse --show-toplevel`
+- Run `git clone` and `git -C .claude/claude-prompt pull` commands
 - Read files inside `.claude/claude-prompt/`
 - Create or overwrite files under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/`
 - List files under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/` to compare against the clone (stale-file check — report only, never delete)
