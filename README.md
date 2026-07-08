@@ -18,6 +18,7 @@ skills/
 └── *.md              # Individual skill definitions
 SYSTEM_PROMPT.md      # Coordinator workflow skeleton — source of truth with skills/implement-feature.md (committed)
 CLAUDE.md             # Repo conventions for Claude when working in this repo
+AGENTS.md             # Pointer to CLAUDE.md for non-Claude agent runtimes
 ```
 
 ## Workflow source of truth

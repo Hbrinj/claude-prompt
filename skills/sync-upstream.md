@@ -1,7 +1,7 @@
 ---
 name: sync-upstream
 version: 3.1.0
-description: Establishes or updates the claude-prompt clone from https://github.com/Hbrinj/claude-prompt, syncs agents/ and skills/ into the repo, flags stale local files the library has since removed, symlinks ~/.claude/agents and ~/.claude/commands to the repo directories so agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md from SYSTEM_PROMPT.md. Trigger when the user wants to pull the latest agents or skills from the shared library, set up the clone for the first time, or refresh CLAUDE.md with the latest workflow.
+description: Establishes or updates the claude-prompt clone from https://github.com/Hbrinj/claude-prompt, syncs agents/ and skills/ into the repo, flags local files absent from the clone as deletion candidates (may be library-removed or consumer-local — never auto-deletes), symlinks ~/.claude/agents and ~/.claude/commands to the repo directories so agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md from SYSTEM_PROMPT.md. Trigger when the user wants to pull the latest agents or skills from the shared library, set up the clone for the first time, or refresh CLAUDE.md with the latest workflow.
 ---
 
 ## Starting state
@@ -151,8 +151,8 @@ Staged changes are NOT committed. Review with `git diff` before committing.
 - Run `git clone` and `git -C .claude/claude-prompt pull` commands
 - Run `git rev-parse --show-toplevel`
 - Read files inside `.claude/claude-prompt/`
-- List files under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/` to compare against the clone (stale-file check — report only, never delete)
 - Create or overwrite files under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/`
+- List files under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/` to compare against the clone (stale-file check — report only, never delete)
 - Run `mkdir -p ~/.claude`
 - Create or update symlinks at `~/.claude/agents` and `~/.claude/commands`
 - Edit `CLAUDE.md` within the guarded markers only

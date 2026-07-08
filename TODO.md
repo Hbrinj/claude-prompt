@@ -2,7 +2,7 @@
 
 Items deferred as out-of-scope from feature planning. Triage manually.
 
-Statuses: `Open` (still valid), `Resolved YYYY-MM-DD` (delivered, see note), `Obsolete YYYY-MM-DD` (references deleted infrastructure or a superseded design — kept for the record).
+Statuses: `Open` (still valid), `Resolved YYYY-MM-DD` (delivered, see note), `Obsolete YYYY-MM-DD` (references deleted infrastructure or a superseded design — kept for the record). A status may carry a brief ` — <note>` qualifier.
 
 ## From feature/add-go-developer
 | Item | Why deferred | Related decision | Added | Status |
