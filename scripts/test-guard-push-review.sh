@@ -220,6 +220,8 @@ assert_allow "implicit push outside a repo fails open" \
   "$(bash_json 'git push' "$TMP/plain")"
 assert_allow "implicit push on detached HEAD fails open" \
   "$(bash_json 'git push' "$DETACHED")"
+assert_allow "bare HEAD refspec on detached HEAD fails open (git would reject it)" \
+  "$(bash_json 'git push origin HEAD' "$DETACHED")"
 
 # ── Allow: non-push commands ────────────────────────────────────────────────
 assert_allow "git status" \
