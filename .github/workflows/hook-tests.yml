@@ -1,0 +1,27 @@
+name: hook-tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hook-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-main-edit suite
+        run: ./scripts/test-guard-main-edit.sh
+      - name: guard-push-main suite
+        run: ./scripts/test-guard-push-main.sh
+      - name: guard-push-review suite
+        run: ./scripts/test-guard-push-review.sh
+      - name: install-hooks suite
+        run: ./scripts/test-install-hooks.sh

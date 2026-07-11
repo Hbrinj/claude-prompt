@@ -137,7 +137,7 @@ You are a specialist in …
 - `guard-push-main.sh` — denies `git push` to main/master.
 - `guard-push-review.sh` — denies pushing a `feature/*`/`fix/*` branch without a `.claude/review-evidence/<branch-slug>.md` record whose `HEAD:` line matches the pushed commit (written at the review step of `/implement-feature`).
 
-`install.sh --global` symlinks `~/.claude/hooks` → `<clone>/scripts/hooks` and prints the `settings.json` block to add manually (it never edits `settings.json`). All hooks require `jq` (preinstalled on recent macOS; otherwise `brew install jq`) and fail open when `jq` is missing or stdin is malformed. Opt-outs live in `~/.claude/hooks-exceptions` (per-path for the edit guard; per-repo for the push-review guard). Full contract: [`scripts/hooks/README.md`](scripts/hooks/README.md).
+`install.sh --global` symlinks `~/.claude/hooks` → `<clone>/scripts/hooks` and prints the `settings.json` block to add manually (it never edits `settings.json`). All hooks require `jq` (preinstalled on recent macOS; otherwise `brew install jq`) and fail open when `jq` is missing or stdin is malformed. The four test suites also run in CI on every PR (`.github/workflows/hook-tests.yml`) — the mechanical backstop for "never open a PR without passing tests" in this repo. Opt-outs live in `~/.claude/hooks-exceptions` (per-path for the edit guard; per-repo for the push-review guard). Full contract: [`scripts/hooks/README.md`](scripts/hooks/README.md).
 
 ## Contributing
 

@@ -46,7 +46,7 @@ hook_json() { # <tool_name> <path_key> <path>
 }
 
 run_hook() { # <stdin payload>
-  printf '%s' "$1" | HOME="$FAKE_HOME" bash "$HOOK"
+  HOME="$FAKE_HOME" bash "$HOOK" <<<"$1"
 }
 
 assert_deny() { # <label> <payload>
@@ -122,8 +122,8 @@ assert_allow "missing tool_input.file_path fails open" \
 # ── Fail open: hook deployed without its sibling lib.sh ─────────────────────
 mkdir -p "$TMP/lonely"
 cp "$HOOK" "$TMP/lonely/"
-if ! out="$(printf '%s' "$(hook_json Edit file_path "$TMP/repo-main/a.md")" \
-  | HOME="$FAKE_HOME" bash "$TMP/lonely/guard-main-edit.sh")"; then
+if ! out="$(HOME="$FAKE_HOME" bash "$TMP/lonely/guard-main-edit.sh" \
+  <<<"$(hook_json Edit file_path "$TMP/repo-main/a.md")")"; then
   echo "FAIL: missing lib.sh — hook exited nonzero"; exit 1
 fi
 [ -z "$out" ] || { echo "FAIL: missing lib.sh — expected allow, got: $out"; exit 1; }
