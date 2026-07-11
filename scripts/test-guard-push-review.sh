@@ -89,7 +89,7 @@ bash_json() { # <command> <cwd>
 }
 
 run_hook() { # <stdin payload>
-  printf '%s' "$1" | HOME="$FAKE_HOME" bash "$HOOK"
+  HOME="$FAKE_HOME" bash "$HOOK" <<<"$1"
 }
 
 assert_deny() { # <label> <payload>
@@ -267,8 +267,8 @@ rm -f "$FAKE_HOME/.claude/hooks-exceptions"
 # ── Fail open: hook deployed without its sibling lib.sh ─────────────────────
 mkdir -p "$TMP/lonely"
 cp "$HOOK" "$TMP/lonely/"
-if ! out="$(printf '%s' "$(bash_json 'git push origin fix/y' "$OK")" \
-  | HOME="$FAKE_HOME" bash "$TMP/lonely/guard-push-review.sh")"; then
+if ! out="$(HOME="$FAKE_HOME" bash "$TMP/lonely/guard-push-review.sh" \
+  <<<"$(bash_json 'git push origin fix/y' "$OK")")"; then
   echo "FAIL: missing lib.sh — hook exited nonzero"; exit 1
 fi
 [ -z "$out" ] || { echo "FAIL: missing lib.sh — expected allow, got: $out"; exit 1; }
