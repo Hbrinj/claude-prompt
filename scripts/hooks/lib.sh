@@ -5,11 +5,13 @@
 #   . "$(dirname "$0")/lib.sh"
 #
 # Provides:
-#   allow            — exit 0 with no output (PreToolUse allow)
-#   deny             — print the PreToolUse deny object using $DENY_REASON, exit 0
-#   read_hook_input  — read stdin into $input and extract $tool_name;
-#                      allows (fail open) when jq is missing or stdin is
-#                      not valid JSON
+#   allow               — exit 0 with no output (PreToolUse allow)
+#   deny                — print the PreToolUse deny object using $DENY_REASON, exit 0
+#   read_hook_input     — read stdin into $input and extract $tool_name;
+#                         allows (fail open) when jq is missing or stdin is
+#                         not valid JSON
+#   path_in_exceptions  — true when a path is at or under a prefix listed in
+#                         ~/.claude/hooks-exceptions (the guards' opt-out file)
 #
 # Not meant to be executed directly; inherits the caller's strict mode.
 
@@ -19,6 +21,39 @@ deny() {
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' \
     "$DENY_REASON"
   exit 0
+}
+
+# path_in_exceptions <path> — true when <path> is at, or under, a prefix
+# listed in ~/.claude/hooks-exceptions. One path prefix per line; a leading
+# `~`, `$HOME`, or `${HOME}` is expanded; blank lines and `#` comments are
+# ignored; a missing file matches nothing. Prefixes match whole path
+# segments: `~/notes` covers `~/notes/a.md` but not `~/notes-other/a.md`.
+path_in_exceptions() {
+  local target="$1" exceptions_file="${HOME}/.claude/hooks-exceptions"
+  local line prefix
+  [[ -f "$exceptions_file" ]] || return 1
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Trim surrounding whitespace; skip blanks and comments.
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    # Expand leading ~, $HOME, ${HOME}. The single quotes are deliberate:
+    # we match the LITERAL strings as written in the exceptions file.
+    # shellcheck disable=SC2088,SC2016
+    case "$line" in
+      '~')         line="${HOME}" ;;
+      '~/'*)       line="${HOME}/${line#'~/'}" ;;
+      '$HOME')     line="${HOME}" ;;
+      '$HOME/'*)   line="${HOME}/${line#'$HOME/'}" ;;
+      '${HOME}')   line="${HOME}" ;;
+      '${HOME}/'*) line="${HOME}/${line#'${HOME}/'}" ;;
+    esac
+    prefix="${line%/}"
+    if [[ "$target" == "$prefix" || "$target" == "$prefix"/* ]]; then
+      return 0
+    fi
+  done < "$exceptions_file"
+  return 1
 }
 
 # Sets globals: input, tool_name.

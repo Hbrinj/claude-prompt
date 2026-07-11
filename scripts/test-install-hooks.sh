@@ -37,13 +37,14 @@ printf '%s' "$GLOBAL_OUT" | grep -qF \
   || { echo "FAIL: global dry-run did not plan the hooks symlink"; printf '%s\n' "$GLOBAL_OUT"; exit 1; }
 echo "  ok: global mode plans hooks symlink"
 
-# 2. Global mode prints the settings.json wiring snippet (both guards, both matchers).
+# 2. Global mode prints the settings.json wiring snippet (all three guards).
 for needle in \
   '"PreToolUse"' \
   '"matcher": "Edit|Write|NotebookEdit"' \
   '"matcher": "Bash"' \
   'guard-main-edit.sh' \
-  'guard-push-main.sh'; do
+  'guard-push-main.sh' \
+  'guard-push-review.sh'; do
   printf '%s' "$GLOBAL_OUT" | grep -qF "$needle" \
     || { echo "FAIL: settings.json snippet missing: $needle"; printf '%s\n' "$GLOBAL_OUT"; exit 1; }
 done

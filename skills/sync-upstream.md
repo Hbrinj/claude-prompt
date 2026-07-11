@@ -1,7 +1,7 @@
 ---
 name: sync-upstream
-version: 3.0.0
-description: Establishes or updates the claude-prompt clone from https://github.com/Hbrinj/claude-prompt, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/commands to the repo directories so agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md from SYSTEM_PROMPT.md. Trigger when the user wants to pull the latest agents or skills from the shared library, set up the clone for the first time, or refresh CLAUDE.md with the latest workflow.
+version: 3.1.0
+description: Establishes or updates the claude-prompt clone from https://github.com/Hbrinj/claude-prompt, syncs agents/ and skills/ into the repo, flags local files absent from the clone as deletion candidates (may be library-removed or consumer-local — never auto-deletes), symlinks ~/.claude/agents and ~/.claude/commands to the repo directories so agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md from SYSTEM_PROMPT.md. Trigger when the user wants to pull the latest agents or skills from the shared library, set up the clone for the first time, or refresh CLAUDE.md with the latest workflow.
 ---
 
 ## Starting state
@@ -66,7 +66,13 @@ For every file in `$REPO_ROOT/.claude/claude-prompt/skills/` (recursively):
 
 MUST NOT delete files in `skills/` that do not exist in the clone — only add or overwrite.
 
-### Step 7 — Link ~/.claude/agents
+### Step 7 — Stale-file check (advisory)
+
+List every `*.md` file under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/` that does NOT exist at the same relative path in the clone. Carry the list into the Step 11 summary as **deletion candidates** — each is either a file the library once shipped and has since removed (e.g. a superseded agent) or a consumer-local file.
+
+NEVER delete them automatically: this check cannot distinguish a removed library file from a consumer-local one, so the user decides. If the list is empty, report `Stale: none`.
+
+### Step 8 — Link ~/.claude/agents
 
 Ensure `~/.claude/` exists (create it if not: `mkdir -p ~/.claude`).
 
@@ -83,7 +89,7 @@ Check the current state of `~/.claude/agents`:
   ```
 - **Exists as a regular directory or file** → STOP. Report the conflict and ask the user whether to remove it before creating the symlink.
 
-### Step 8 — Link ~/.claude/commands
+### Step 9 — Link ~/.claude/commands
 
 `~/.claude/commands/` is the directory Claude Code CLI reads for global slash commands. Symlink it to the repo's `skills/` directory so all skills are available in any Claude Code session.
 
@@ -100,7 +106,7 @@ Check the current state of `~/.claude/commands`:
   ```
 - **Exists as a regular directory or file** → STOP. Report the conflict and ask the user whether to remove it before creating the symlink.
 
-### Step 9 — Update CLAUDE.md
+### Step 10 — Update CLAUDE.md
 
 Read `.claude/claude-prompt/SYSTEM_PROMPT.md` to get the latest workflow content.
 
@@ -121,7 +127,7 @@ Guarded block format:
 
 MUST NOT modify any content in `CLAUDE.md` outside the `<!-- SYSTEM_PROMPT:START -->` / `<!-- SYSTEM_PROMPT:END -->` markers.
 
-### Step 10 — Report
+### Step 11 — Report
 
 Output a summary block:
 
@@ -131,6 +137,8 @@ Output a summary block:
 Clone:       .claude/claude-prompt @ <short commit hash>
 Agents:      <count> files synced → ~/.claude/agents → $REPO_ROOT/agents/
 Skills:      <count> files synced → ~/.claude/commands → $REPO_ROOT/skills/
+Stale:       none | <count> local files not in the clone — deletion candidates, review before removing:
+             <one relative path per line>
 CLAUDE.md:   updated (markers found | markers appended)
 
 Staged changes are NOT committed. Review with `git diff` before committing.
@@ -140,10 +148,11 @@ Staged changes are NOT committed. Review with `git diff` before committing.
 
 ## Allowed actions
 
-- Run `git clone` and `git -C .claude/claude-prompt pull` commands
 - Run `git rev-parse --show-toplevel`
+- Run `git clone` and `git -C .claude/claude-prompt pull` commands
 - Read files inside `.claude/claude-prompt/`
 - Create or overwrite files under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/`
+- List files under `$REPO_ROOT/agents/` and `$REPO_ROOT/skills/` to compare against the clone (stale-file check — report only, never delete)
 - Run `mkdir -p ~/.claude`
 - Create or update symlinks at `~/.claude/agents` and `~/.claude/commands`
 - Edit `CLAUDE.md` within the guarded markers only

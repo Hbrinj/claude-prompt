@@ -2,14 +2,16 @@
 
 | Skill | Description |
 |-------|-------------|
-| [sync-upstream](sync-upstream.md) | Establishes or updates the claude-prompt submodule, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/commands so all agents and slash commands are available in every Claude Code CLI session, and updates CLAUDE.md |
-| [implement-feature](implement-feature.md) | Step 2 of the coordinator workflow — implements one approved issue: branch, `/tdd` implementation via the stack developer agent, file-type reviewer routing gate, feature log, push, review gate, PR, CI monitoring. Holds the checkpoint format and feature-log schema. |
+| [sync-upstream](sync-upstream.md) | Establishes or updates the claude-prompt clone, syncs agents/ and skills/ into the repo, symlinks ~/.claude/agents and ~/.claude/commands so all agents and slash commands are available in every Claude Code CLI session, updates CLAUDE.md, and flags local agent/skill files no longer in the clone as deletion candidates (never auto-deletes) |
+| [implement-feature](implement-feature.md) | Step 2 of the coordinator workflow — implements one approved issue: branch, `developer`-agent implementation with enforced TDD outcomes, verification by execution, fresh-context `reviewer` pass with a confirm re-pass after fixes, review-evidence record, issue status comments, push, review gate, PR, CI monitoring. Holds the stack-brief routing table, evidence-record schema, and status-comment format. |
+
+[stacks/](stacks/README.md) holds the per-stack reference briefs the `developer` agent loads (not slash-command skills).
 
 Step 1 (Understand → Specify → Slice) and the implementation methodology are owned by the vendored Matt Pocock skills below (`/grill-with-docs`, `/to-prd`, `/to-issues`, `/tdd`, …).
 
 ## Vendored — Matt Pocock engineering skills (third-party, MIT)
 
-Vendored verbatim from <https://github.com/mattpocock/skills> (`skills/engineering/`). See [NOTICE.md](NOTICE.md) for the pinned commit, license, and update procedure. These follow upstream's structure and are scoped out of `prompt-definition-reviewer`.
+Vendored verbatim from <https://github.com/mattpocock/skills> (`skills/engineering/`). See [NOTICE.md](NOTICE.md) for the pinned commit, license, and update procedure. These follow upstream's structure; the `reviewer` agent skips them (they are reviewed upstream, not against this repo's skeleton).
 
 | Skill | Description |
 |-------|-------------|

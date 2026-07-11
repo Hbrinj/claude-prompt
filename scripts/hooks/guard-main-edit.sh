@@ -19,7 +19,8 @@
 # (one path prefix per line; leading `~`, `$HOME`, or `${HOME}` expanded;
 # blank lines and `#` comments ignored; the file may not exist).
 #
-# Dependencies: jq, git, sibling lib.sh (allow/deny/read_hook_input).
+# Dependencies: jq, git, sibling lib.sh (allow/deny/read_hook_input/
+# path_in_exceptions).
 set -euo pipefail
 
 DENY_REASON="On main/master — create a feature branch first"
@@ -51,29 +52,8 @@ if [[ "$target" != /* ]]; then
 fi
 
 # Exceptions file: allow any target at or under a listed path prefix.
-exceptions_file="${HOME}/.claude/hooks-exceptions"
-if [[ -f "$exceptions_file" ]]; then
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    # Trim surrounding whitespace; skip blanks and comments.
-    line="${line#"${line%%[![:space:]]*}"}"
-    line="${line%"${line##*[![:space:]]}"}"
-    [[ -z "$line" || "$line" == \#* ]] && continue
-    # Expand leading ~, $HOME, ${HOME}. The single quotes are deliberate:
-    # we match the LITERAL strings as written in the exceptions file.
-    # shellcheck disable=SC2088,SC2016
-    case "$line" in
-      '~')         line="${HOME}" ;;
-      '~/'*)       line="${HOME}/${line#'~/'}" ;;
-      '$HOME')     line="${HOME}" ;;
-      '$HOME/'*)   line="${HOME}/${line#'$HOME/'}" ;;
-      '${HOME}')   line="${HOME}" ;;
-      '${HOME}/'*) line="${HOME}/${line#'${HOME}/'}" ;;
-    esac
-    prefix="${line%/}"
-    if [[ "$target" == "$prefix" || "$target" == "$prefix"/* ]]; then
-      allow
-    fi
-  done < "$exceptions_file"
+if path_in_exceptions "$target"; then
+  allow
 fi
 
 # Walk up to the nearest existing directory (the target may not exist yet).

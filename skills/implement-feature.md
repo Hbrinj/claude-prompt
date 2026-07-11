@@ -1,125 +1,126 @@
 ---
 name: implement-feature
-version: 2.0.0
-description: Step 2 of the coordinator workflow — implements one approved issue. Use when Step 1 (/grill-with-docs → /to-prd → /to-issues) has produced an approved issue on the tracker and the user has approved implementation. Owns the full sub-step sequence — feature branch, /tdd implementation via the stack developer agent, file-type reviewer routing gate, feature log, push, review gate, PR, CI monitoring.
+version: 3.0.0
+description: Step 2 of the coordinator workflow — implements one approved issue in the standard or high-risk lane. Use when Step 1 has produced an approved issue on the tracker and the user has approved implementation. Owns the full sub-step sequence — feature branch, developer-agent implementation with enforced TDD outcomes, verification by execution, fresh-context reviewer pass with a confirm re-pass after fixes, review-evidence record, issue status comments, push, review gate, PR, CI monitoring.
 ---
 
 ## Starting state
 
-An approved issue exists on the tracker (Step 1 complete: `/grill-with-docs` → `/to-prd` → `/to-issues`) and the user has explicitly approved implementation. No `feature/<slug>` branch exists yet for this issue.
+An approved issue exists on the tracker (Step 1 complete) and the user has explicitly approved implementation. The lane is known: standard, or high-risk (which adds `security-reviewer` and human diff review — see step 4). No `feature/<slug>` branch exists yet for this issue. Express-lane work does not enter this skill — it is handled inline per `SYSTEM_PROMPT.md`.
 
 ## Target state
 
-A pushed feature branch whose diff every triggered reviewer has APPROVED, a feature-log row with status `In Review`, a checkpoint with status COMPLETE, and — after the user approves at the review gate — an open PR with CI passing.
+A pushed feature branch with a review-evidence record matching HEAD, a status comment trail on the issue, and — after the user approves at the review gate — an open PR carrying the evidence summary, with CI passing.
 
 ## Execute in this exact order
 
 1. **Branch** — create `feature/<issue-slug>` or `fix/<issue-slug>`.
 
-2. **Code + self-review** — delegate to the developer agent matching the tech stack (see `## Developer-agent routing` below). Pass the issue (number/URL/body) as its brief.
-   - The developer agent follows `/tdd` for the red-green-refactor loop: one vertical slice per cycle, failing test first → minimum implementation to pass → refactor, applying its own stack-specific testing rules within that loop. Each slice is one commit naming the slice.
-   - The developer agent owns its own self-review loop per its agent prompt (`## Self-review before return`): after the last slice/commit, it invokes `code-reviewer`, applies CRITICAL+MAJOR findings, and repeats up to 3 cycles or until APPROVE before returning. The coordinator does NOT run `code-reviewer` separately.
+2. **Implement** — dispatch the `developer` agent (`agents/developer.md`) with the issue (number/URL/body) as its brief and the stack brief path from `## Stack-brief routing` below. The developer follows `/tdd` with enforced outcomes — every test observed failing before the code that passes it, one slice per commit — and returns an evidence report (red/green output per slice, full-suite run, verification-command status). It does NOT run a review loop.
 
-3. **File-type routing gate** — after the developer-agent self-review completes (or in lieu of it for non-code work), inspect the diff. For each touched file-type bucket, ensure the corresponding reviewer has APPROVED; run any missing reviewer now in its own self-review loop (≤3 cycles, apply CRITICAL+MAJOR each round, surface MINOR/SUGGESTION once at the end):
-   - Files under `agents/` or `skills/` → run `prompt-definition-reviewer` (`agents/prompt-definition-reviewer.md`), EXCEPT files under a vendored skill directory listed in `skills/NOTICE.md` (third-party — not gated here).
-   - Files matching the general allowlist (`*.md` outside `agents/`/`skills/`; `*.json` / `*.yml` / `*.yaml` / `*.toml`; `tasks/*.md`; `features/*.md`) → run `general-reviewer` (`agents/general-reviewer.md`).
-   - Pure-code diffs are already covered by the developer-agent self-review and need no extra run here.
-   - Mixed diffs run every reviewer whose bucket is touched. Push is blocked until every triggered reviewer returns APPROVE.
+3. **Verify by execution** — before any review:
+   - Run the full test suite yourself; capture the summary output.
+   - Drive the affected flow end-to-end — run the app/CLI/service and exercise the change the way a user would, not only through the tests. Capture what you observed.
+   - If the diff has no runtime surface to drive (pure docs/config), record that and why.
 
-4. **Feature log** — append one row to `features/all_features.md` (create if missing) with status `In Review`; commit on the feature branch before the PR is opened. Schema:
+4. **Review — one fresh-context pass, plus one confirm re-pass after fixes** — dispatch the `reviewer` agent (`agents/reviewer.md`) with the issue brief, the developer's evidence report, and your verification output. It returns claims-with-evidence findings and a verdict.
+   - Apply CRITICAL and MAJOR findings (route code fixes through the `developer` agent), then re-invoke `reviewer` ONCE to confirm the fixes. Surface MINOR/SUGGESTION findings to the user unapplied.
+   - If the confirm pass still returns REQUEST CHANGES, stop and ask the user.
+   - **High-risk lane only**: also dispatch `security-reviewer`; any new CRITICAL or HIGH finding in files the diff touches blocks until resolved.
 
-   ```
-   # All Features
+5. **Review-evidence record** — write `.claude/review-evidence/<branch-slug>.md` (slug = branch name with `/` → `-`; schema below). The `guard-push-review` hook blocks pushing a `feature/*`/`fix/*` branch without a record matching HEAD — any new commit invalidates the record, so re-run steps 3–5 after applying changes. The record is local state: gitignored, NEVER committed.
 
-   | Feature | Branch | Summary | Status | Merged |
-   |---------|--------|---------|--------|--------|
-   | <feature_name> | feature/<name> | One sentence summary | In Review | YYYY-MM-DD |
-   ```
+6. **Status comment** — post a status comment on the issue (via `issue-liaison` for GitHub; tracker-appropriate otherwise) using `## Status comment format` below. These comments are the workflow's pause/resume state — there are no local checkpoint files.
 
-5. **Push** — push the feature branch to origin. NEVER push main/master.
+7. **Push** — push the feature branch to origin. NEVER push main/master.
 
-6. **Review gate** — write the checkpoint with status COMPLETE, then present:
+8. **Review gate** — present to the user:
 
    ```
    ## Implementation complete — review required before PR
 
    ### Branch
-   <branch name>
+   <branch name> (<commit list>)
 
-   ### Commits on branch
-   <list>
-
-   ### Feature log entry
-   <the row added to features/all_features.md>
+   ### Evidence
+   - Tests: <full-suite summary line>
+   - Flow driven: <what was exercised and observed>
+   - Reviewer verdict: <APPROVE / findings applied>
+   - Red/green: <one line per slice>
 
    ### What was done
    <bullet summary>
    ```
 
-   Stop and ask: *"Implementation is complete. Approve to open the PR, or provide feedback to address first."* MUST wait for explicit approval before continuing.
+   High-risk lane: explicitly request human review of the diff itself, not just the evidence. Stop and ask: *"Implementation is complete. Approve to open the PR, or provide feedback to address first."* MUST wait for explicit approval.
 
-7. **PR** — open a pull request; link the issue it implements (e.g. "Closes #N") and summarise the slices delivered.
+9. **PR** — open a pull request; link the issue (e.g. "Closes #N") and include the evidence summary from step 8 in the body.
 
-8. **Pipeline** — monitor CI until it passes; if any check fails, read the failure, fix the root cause, push again, re-monitor; NEVER skip or bypass failing checks.
+10. **Pipeline** — monitor CI until it passes; if any check fails, read the failure, fix the root cause (route code fixes through `developer`, re-running steps 3–5), push again, re-monitor. NEVER skip or bypass failing checks.
 
-## Developer-agent routing
+## Stack-brief routing
 
-| Stack | Agent |
+| Stack | Brief |
 |-------|-------|
-| Android/Kotlin mobile | `agents/android-developer.md` |
-| iOS/Swift | `agents/ios-developer.md` |
-| Flutter/Dart | `agents/flutter-developer.md` |
-| Kotlin backend/AWS | `agents/kotlin-backend-developer.md` |
-| Go (CLI tools, services, libraries) | `agents/go-developer.md` |
-| Bash/shell scripts + the adjacent markdown prose documenting them | `agents/shell-developer.md` |
-| React + TypeScript web (SPA, components, hooks, client-side logic) | `agents/react-typescript-developer.md` |
+| Android/Kotlin mobile | `skills/stacks/android.md` |
+| iOS/Swift | `skills/stacks/ios.md` |
+| Flutter/Dart | `skills/stacks/flutter.md` |
+| Kotlin backend/AWS | `skills/stacks/kotlin-backend.md` |
+| Go (CLI tools, services, libraries) | `skills/stacks/go.md` |
+| Bash/shell scripts + the adjacent markdown prose documenting them | `skills/stacks/shell.md` |
+| React + TypeScript web (SPA, components, hooks, client-side logic) | `skills/stacks/react-typescript.md` |
 
-Each developer agent follows `/tdd` for the red-green-refactor loop and supplies only its stack-specific testing/idiom rules.
+Supporting agents and skills: `skills/tdd/SKILL.md` (the red-green-refactor methodology the developer follows), `agents/reviewer.md` (step 4 gate), `agents/security-reviewer.md` (step 4, high-risk lane; on demand otherwise), `agents/issue-liaison.md` (status comments + PR link on GitHub-issue-driven work). Step 1 skills (`/grill-with-docs`, `/to-prd`, `/to-issues`) and supporting skills (`/diagnose`, `/improve-codebase-architecture`, `/triage`, `/prototype`, `/zoom-out`) are coordinator-invoked outside this skill.
 
-Supporting agents and skills: `skills/tdd/SKILL.md` (the red-green-refactor methodology every developer agent follows), `agents/code-reviewer.md` (invoked by the developer agent's self-review loop), `agents/prompt-definition-reviewer.md` and `agents/general-reviewer.md` (invoked by the routing gate in step 3), `agents/issue-liaison.md` (posts status + the PR link on GitHub-issue-driven work), `agents/security-reviewer.md` (on demand). Step 1 skills (`/grill-with-docs`, `/to-prd`, `/to-issues`) and supporting skills (`/diagnose`, `/improve-codebase-architecture`, `/triage`, `/prototype`, `/zoom-out`) are coordinator-invoked outside this skill.
+## Review-evidence record schema
+
+```
+# Review evidence: <branch>
+
+HEAD: <full commit sha>
+Lane: express | standard | high-risk
+Date: YYYY-MM-DD
+
+## Verification
+<commands run + key output lines: test totals, flow driven and what was observed>
+
+## Review
+Verdict: APPROVE (<N> findings applied) | express-lane self-verified
+<one line per applied finding, or "no findings">
+```
+
+The `guard-push-review` hook checks only that the record exists for the branch and that its `HEAD:` line matches the current commit — the content discipline is this skill's contract.
+
+## Status comment format
+
+```
+**Status — <implementing | in review | pushed | PR opened #N | blocked>**
+Branch: <name> @ <short sha>
+<one sentence on what just completed or started>
+<resumption notes when pausing: decisions, open questions, next action>
+```
 
 ## Allowed actions
 
 - Create and switch to the feature branch; commit on it.
-- Dispatch developer and reviewer agents and read their reports.
-- Edit `features/all_features.md` and `features/<feature_name>.checkpoint.md`; apply reviewer CRITICAL+MAJOR findings to files in the diff.
+- Dispatch `developer`, `reviewer`, `security-reviewer`, and `issue-liaison` agents and read their reports.
+- Run the test suite and drive the affected flow for step 3 verification.
+- Write `.claude/review-evidence/<branch-slug>.md`; apply reviewer findings to files in the diff (code fixes via `developer`).
 - Push the feature branch to origin; open the PR after explicit user approval; monitor CI.
 
 ## Forbidden actions
 
 - NEVER push to main/master.
-- NEVER push any branch before every reviewer triggered by the diff has returned APPROVE.
-- NEVER open a PR without passing tests, or before the user approves at the review gate (step 6).
-- NEVER write implementation code directly — delegate to the matching developer agent.
+- NEVER push a `feature/*`/`fix/*` branch without a review-evidence record matching HEAD.
+- NEVER commit `.claude/review-evidence/` — it is local state.
+- NEVER open a PR before the user approves at the review gate (step 8).
+- NEVER write implementation code directly — delegate to the `developer` agent.
+- NEVER weaken, delete, or disable a test to get to green — that is a blocking finding, not a fix.
 - NEVER stage or commit files unrelated to this feature.
 
 ## Stop and ask before
 
-- Proceeding when no developer agent matches the tech stack.
-- Continuing past a reviewer loop that still returns REQUEST CHANGES after 3 cycles.
+- Proceeding when no stack brief matches the tech stack.
+- Continuing past a reviewer confirm pass that still returns REQUEST CHANGES.
 - Any destructive git operation (rebase, force-push, history rewrite).
-- Opening the PR — the step 6 review gate is mandatory.
-
-## Checkpoint format
-
-This skill writes a checkpoint at the end of Step 2 (Implement). The same format is used by the coordinator for the Step 1 — Plan checkpoint; it is defined here as the canonical reference:
-
-```
-# Checkpoint: <feature_name>
-
-## Status
-Step <N> — <step name> — COMPLETE | IN PROGRESS | BLOCKED
-
-## Issue
-<tracker issue ID(s) this work implements>
-
-## Completed steps
-- [ ] Step 1 — Understand / Specify / Slice
-- [ ] Step 2 — Implement
-
-## Resumption notes
-<decisions, open questions, or state the next session needs to know>
-
-## Last updated
-<YYYY-MM-DD>
-```
+- Opening the PR — the step 8 review gate is mandatory.

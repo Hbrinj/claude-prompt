@@ -11,3 +11,6 @@ Thumbs.db
 # Local Claude overrides (keep agents/ tracked, not local config)
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+
+# Local workflow state — review-evidence records (see skills/implement-feature.md)
+.claude/review-evidence/

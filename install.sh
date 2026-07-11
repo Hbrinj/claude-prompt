@@ -549,7 +549,8 @@ if [ "${INSTALL_MODE}" = "global" ]; then
   cat <<'EOF'
 
 → Guard hooks (manual step — install.sh never edits settings.json)
-  To enable the main/master guard hooks, add this to ~/.claude/settings.json
+  To enable the guard hooks (main/master edit + push guards, and the
+  review-evidence push guard), add this to ~/.claude/settings.json
   (merge into an existing "hooks" key if you already have one):
 
   {
@@ -564,14 +565,15 @@ if [ "${INSTALL_MODE}" = "global" ]; then
         {
           "matcher": "Bash",
           "hooks": [
-            { "type": "command", "command": "bash \"$HOME/.claude/hooks/guard-push-main.sh\"" }
+            { "type": "command", "command": "bash \"$HOME/.claude/hooks/guard-push-main.sh\"" },
+            { "type": "command", "command": "bash \"$HOME/.claude/hooks/guard-push-review.sh\"" }
           ]
         }
       ]
     }
   }
 
-  Both hooks require jq (preinstalled on recent macOS; otherwise
+  All three hooks require jq (preinstalled on recent macOS; otherwise
   `brew install jq` / `apt install jq`). Details, the fail-open rules, and
   the ~/.claude/hooks-exceptions format: scripts/hooks/README.md in the clone.
 EOF
